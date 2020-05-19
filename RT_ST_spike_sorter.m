@@ -1,7 +1,8 @@
 function out = RT_ST_spike_sorter(SpikeMat,sdd,REM,INPCA)
 % this function sorts detected spikes using mixtures of multivariate skew-t
 % distributions. SpikeMat is matrix of detected spikes, sdd is settings,
-% REM contains spikes after statistical filtering.
+% REM contains spikes after statistical filtering. INPCA is a logical value
+% which determines whether considering noise spikes in computing PCA or not.
 
 % default values for REM and INPCA
 if nargin < 3
@@ -27,8 +28,6 @@ g_min = sdd.sort.g_min;
 if ~INPCA && ~isempty(REM)
     SpikeMat(REM,:) = [];
 end
-
-% [~,SpikeMat] = pca(SpikeMat,'NumComponents',sdd.sort.n_pca);
 
 % returns principal component scores in SpikeMat and the principal
 % component variances in latent
@@ -99,10 +98,6 @@ Gama = cell(1, g);
 
 % running clustering algorithm for g in [g_max, ...,g_min]
 while(g >= g_min)
-    
-%     fprintf('g = %d Started.\n',g)
-%     tic
-    
     for k = 1 : g
         delta{k} = shape{k} ./ sqrt(1 + shape{k} * transpose(shape{k}));
         Delta{k} = transpose(matrix_sqrt(Sigma{k}) * transpose(delta{k}));
@@ -113,11 +108,7 @@ while(g >= g_min)
         Gama_uni = plus(Gama{:}) / g;
         Gama(:) = {Gama_uni};
     end
-    
-    % mu_old = mu;
     Delta_old = Delta;
-    % Gama_old = Gama;
-    
     criterio = 1;
     count = 0;
     lkante = 1;
@@ -213,30 +204,19 @@ while(g >= g_min)
     if L > L_max     
         L_max = L; 
         % assigning cluster indices to each spike. if REM is given the
-        % outliers must be assigned to cluster 254.
+        % outliers must be assigned to cluster 255.
         if isempty(REM) 
             [~,out.cluster_index] = max(tal,[],2);
         else
             [~,c_i] = max(tal,[],2);
             cluster_index = zeros(length(REM),1);
             cluster_index(~REM) = c_i;
-            cluster_index(REM) = 254; % removed
+            cluster_index(REM) = 255; % removed
             out.cluster_index = cluster_index;
         end
-        
-%         out.params = repmat(struct('mu', 0, 'Sigma', 0, 'shape', 0), [1, g]);
-%         for j = 1 : g
-%             out.params(j).mu = mu{j};
-%             out.params(j).Sigma = Sigma{j};
-%             out.params(j).shape = shape{j};
-%         end
-%         out.nu = nu;
-%         out.pii = pii;
-        
     else
         break
     end
-    
     
     % set smalletst component to zero
     m_pii = min(pii);
@@ -247,9 +227,7 @@ while(g >= g_min)
     pii(indx_remove) = [];
     shape(indx_remove) = [];
     g = g-sum(indx_remove);
-    
-%     toc
-    
+
 end
 
 

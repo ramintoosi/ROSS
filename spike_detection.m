@@ -95,7 +95,6 @@ n_points_per_spike = config_struct.pre_thresh + config_struct.post_thresh + 1;
 
 % DEAD TIME
 dead_time = config_struct.dead_time;
-% threshold on energy
 
 % default for threshold side is both sides
 if nargin < 2

@@ -11,7 +11,6 @@ function dens = dmvt_ls (y, mu, Sigma, lambda, nu)
     ncol = @(x) size(x,2);
     n = nrow(y);
     p = ncol(y);
-%     mahalanobis = @(x, mu, Sigma) diag((x - mu) * (Sigma \ transpose(x - mu)));
     mahalanobis_d = (pdist2(y,mu,'mahalanobis',Sigma)).^2;
     denst = (gamma((p + nu)./2)./(gamma(nu./2) .* pi.^(p./2))) .* ...
             nu.^(-p./2) .* det(Sigma).^(-1/2) .* ...

@@ -2,7 +2,8 @@ function optimal_set = RT_spike_sorter_faster(SpikeMat,sdd,REM,INPCA)
 % this function sorts detected spikes according to the following paper:
 % Robust, automatic spike sorting using mixtures of multivariate
 % t-distributions. SpikeMat is matrix of detected spikes, sdd is settings,
-% REM contains spikes after statistical filtering.
+% REM contains spikes after statistical filtering. INPCA is a logical value
+% which determines whether considering noise spikes in computing PCA or not.
 
 % default values for REM and INPCA
 if nargin < 3
@@ -46,16 +47,13 @@ u_limit = sdd.sort.u_lim;
 % Initialization
 n_spike = size(SpikeMat,1); % i
 n_feat = size(SpikeMat,2); % p in paper
-% Pi = ones(1,g_max)./g_max;
 Sigma = repmat(eye(n_feat),1,1,g_max);
 v = sdd.sort.nu;
 L_max = -inf;
 % Theoreticaally :  N =  p(p+1)/2+p but in the paper it is determined emprically
 % N = (n_feat)*(n_feat+1)/2 + n_feat;
 N = sdd.sort.N;
-
-
-g = g_max; % j
+g = g_max;
 
 delta_L_limit = 0.1;
 delta_v_limit = 0.1;
@@ -63,11 +61,10 @@ delta_v_limit = 0.1;
 delta_L = 100;
 delta_v = 100;
 
-max_iter = 500;
+max_iter = sdd.sort.max_iter;
 
 % simple clustering method to determine centers
 rng(seed)
-% [~,mu] = kmeans(SpikeMat,g,'MaxIter',1000);
 
 % running FCM on SpikeMat. initial value for mu is considered cluster
 % centers returned from fcm function. this step is done only for first g (g_max)
@@ -98,29 +95,12 @@ while(g >= g_min)
     % ends when maximum change among all parameters is smaller than a
     % threshold, or when reaching "max_iter".
     while((delta_L > delta_L_limit || delta_v > delta_v_limit) && iter < max_iter)
-        
-        % E-Step
-        % update Membership and weights Eq 6
-        % P -> tpdf
-        %         for j = 1 : g
-        %             s = sqrt(diag(Sigma(:,:,j)));
-        %             if (any(s~=1))
-        %                 Sigma(:,:,j) = Sigma(:,:,j) ./ (s * s');
-        %             end
-        %             [~,err] = cholcov(Sigma(:,:,j),0);
-        %             while(err~=0)
-        %                 Sigma(:,:,j) = Sigma(:,:,j) + eye(size(Sigma,1))*1e-10;
-        %                 [~,err] = cholcov(Sigma(:,:,j),0);
-        %             end
-        %             P(:,j) = mvtpdf(SpikeMat - repmat(mu(j,:),n_spike,1),Sigma(:,:,j),v);
-        %         end
-        
         % Probability , this way is better than the mvtpdf of MATLAB itself
         n_sigma=size(Sigma,3); % number of sigma
         detSigma=zeros(1,n_sigma);
         rep=reshape(repmat(1:g,n_spike,1),g*n_spike,1);
         rep_data=repmat(SpikeMat,g,1);
-        diffs=rep_data-mu(rep,:);%Distances to cluster center
+        diffs=rep_data-mu(rep,:); % Distances to cluster center
         for i=1:n_sigma
             detSigma(i)=1/sqrt(det(Sigma(:,:,i)));
         end
@@ -129,7 +109,7 @@ while(g >= g_min)
             M(:,i)=real(sum(((sqrtm(pinv(Sigma(:,:,i)))*(diffs(rep==i,:)')).^2))'); %Mahalanobis distances
         end
         c=gamma((v+n_feat)/2)/(gamma(v/2)*(pi*v)^(n_feat/2));
-        P =c*exp(-(v+n_feat)*log(1+M/v)/2)*diag(detSigma);%probabilities
+        P =c*exp(-(v+n_feat)*log(1+M/v)/2)*diag(detSigma); % probabilities
         
         % membership
         num_z = repmat(Pi,n_spike,1).*P;
@@ -138,13 +118,11 @@ while(g >= g_min)
         
         % typicallity update
         delta_distance = M;
-        u = (n_feat+v) ./ (delta_distance + v);
-        
+        u = (n_feat+v) ./ (delta_distance + v); 
         
         % M-Step
         deltaP = 1;
-        
-        
+               
         while(deltaP > 1e-4)
             gtmp = g;
             Pi_old = Pi;
@@ -153,8 +131,7 @@ while(g >= g_min)
             ztmp = num_ztmp./repmat(den_ztmp,1,gtmp);
             Pi_num = (sum(ztmp,1) - N/2); % Eq 7
             Pi_num(Pi_num<0) = 0;
-            Pi = Pi_num ./ (n_spike-gtmp*N/2);
-            
+            Pi = Pi_num ./ (n_spike-gtmp*N/2);         
             if any(Pi==0)
                 gtmp = gtmp - sum(Pi > 0);
             end
@@ -164,18 +141,10 @@ while(g >= g_min)
         
         Pi = Pi./sum(Pi); % normalize
         % update mu , sigma Eq 8
-        % TODO: vectorize or parallize
-        % need to be double checked
         for j = 1 : g
             % update mu
             num = sum((repmat(z(:,j),1,n_feat).*repmat(u(:,j),1,n_feat).*SpikeMat));
             mu(j,:) = num ./ sum(z(:,j).*u(:,j));
-            % update sigma
-            %             tmp_sum = 0;
-            %             for i = 1 : n_feat
-            %                 tmp_sum = tmp_sum + z(i,j).*u(i,j).*(SpikeMat(i,:) - mu(j,:))'*(SpikeMat(i,:) - mu(j,:));
-            %             end
-            %             Sigma(:,:,j) = tmp_sum ./ sum(z(:,j).*u(:,j));
         end
         % update Sigma
         ZU = z.*u;
@@ -190,63 +159,40 @@ while(g >= g_min)
         y = real(-sum(yt(:)));
         v = 2 / (y+log(y) - 1) + 0.0416*(1 + erf(0.6594*log(2.1971/(y+log(y) - 1))));
         
-        % update P(i,j) Eq 3
-        %         for j = 1 : g
-        %             s = sqrt(diag(Sigma(:,:,j)));
-        %             if (any(s~=1))
-        %                 Sigma(:,:,j) = Sigma(:,:,j) ./ (s * s');
-        %             end
-        %             [~,err] = cholcov(Sigma(:,:,j),0);
-        %
-        %             while(err~=0)
-        %                 Sigma(:,:,j) = Sigma(:,:,j) + eye(size(Sigma,1))*1e-5;
-        %                 [~,err] = cholcov(Sigma(:,:,j),0);
-        %             end
-        %             P(:,j) = mvtpdf(SpikeMat - repmat(mu(j,:),size(SpikeMat,1),1),Sigma(:,:,j),v);
-        %         end
-        
         % Probability (t-dist)
         n_sigma=size(Sigma,3);
         detSigma=zeros(1,n_sigma);
         rep=reshape(repmat(1:g,n_spike,1),g*n_spike,1);
         rep_data=repmat(SpikeMat,g,1);
-        diffs=rep_data-mu(rep,:);%Distances to cluster center
+        diffs=rep_data-mu(rep,:); % Distances to cluster center
         for i=1:n_sigma
             detSigma(i)=1/sqrt(det(Sigma(:,:,i)));
         end
         M=zeros(n_spike,g);
         for i=1:n_sigma
-            M(:,i)=sum(((sqrtm(pinv(Sigma(:,:,i)))*(diffs(rep==i,:)')).^2))'; %Mahalanobis distances
+            M(:,i)=sum(((sqrtm(pinv(Sigma(:,:,i)))*(diffs(rep==i,:)')).^2))'; % Mahalanobis distances
         end
         c=gamma((v+n_feat)/2)/(gamma(v/2)*(pi*v)^(n_feat/2));
-        P =c*exp(-(v+n_feat)*log(1+M/v)/2)*diag(detSigma);%probabilities
+        P =c*exp(-(v+n_feat)*log(1+M/v)/2)*diag(detSigma); % probabilities
         
         % update L Eq 5
         min_mess_len_criterion = N/2 * sum(log(n_feat.*Pi/12) + 0.5*g*log(n_feat/12) + g*(N+1)/2);
         l_log = sum(log(sum(repmat(Pi,n_spike,1).*P,2)),1);
         L = l_log - min_mess_len_criterion;
         
-        % convergence criteria
-        
+        % convergence criteria   
         delta_L = abs(L - L_old);
         delta_v = abs(v - v_old);
-        
-        
+               
         L_old = L;
         v_old = v;
-        
-        
+               
         Ltt = [Ltt,L];
         
         iter = iter + 1;
         if iter == max_iter
             warning('CONVERGENCE FAILED FOR delta_L')
         end
-        %         if mod(iter-1,100) == 0
-        %             fprintf('Iteration %d passed !!!\n',iter-1)
-        %         end
-        %
-        % purge Pi = 0
         indx_remove = Pi == 0;
         mu(indx_remove,:) = [];
         Sigma(:,:,indx_remove) = [];
@@ -263,25 +209,15 @@ while(g >= g_min)
         
         L_max = L;
         if isempty(REM)
-            
-            %             optimal_set.mu = mu;
-            %             optimal_set.Sigma = Sigma;
-            %             optimal_set.v = v;
-            %             optimal_set.z = z;
-            
-            [~,optimal_set.cluster_index] = max(z,[],2);
-            
+            [~,optimal_set.cluster_index] = max(z,[],2);         
         else
             [~,c_i] = max(z,[],2);
             cluster_index = zeros(length(REM),1);
             cluster_index(~REM) = c_i;
-            cluster_index(REM) = 254; % removed
+            cluster_index(REM) = 255; % removed
             optimal_set.cluster_index = cluster_index;
         end
-        %         optimal_set.Pi = Pi;
-        %         optimal_set.L = Ltt;
         optimal_set.u = u;
-        %         optimal_set.n_cluster = length(Pi);
         
     else
         break;
@@ -304,13 +240,13 @@ while(g >= g_min)
 end
 
 % find not typical spikes based on typicality limit and assign them to
-% cluster 255
+% cluster 254
 if isempty(REM)
     u_final = zeros(n_spike,1);
     for i = 1 : n_spike
         u_final(i) = optimal_set.u(i,optimal_set.cluster_index(i));
         if u_final(i) < u_limit
-            optimal_set.cluster_index(i) = 255;
+            optimal_set.cluster_index(i) = 254;
         end
     end
     optimal_set.typicallity = u_final;
