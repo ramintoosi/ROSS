@@ -19,7 +19,7 @@ Download the package to a local folder. Run matlab and navigate to the folder. T
 
 ## Usage
 
-ROSS provides useful tools for spike detection, automatic sorting and manual sorting. For more instructions and samples please visit [ROSS documentation]() or [demo video]().
+ROSS provides useful tools for spike detection, automatic sorting and manual sorting. For more instructions and samples please visit [ROSS documentation](https://gitlab.com/dinashi/ross/documentation.pdf) or [demo video]().
 
 # Acknowledgment
 Thanks to [Plot Big](https://www.mathworks.com/matlabcentral/fileexchange/40790-plot-big).
