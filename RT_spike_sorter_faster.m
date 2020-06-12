@@ -251,17 +251,15 @@ if isempty(REM)
     end
     optimal_set.typicallity = u_final;
 else
-    % also spikes not included in REM must be assigned to cluster 255.
     ind_nor_rem = find(~REM);
     u_final = zeros(length(REM),1);
     for i = 1 : n_spike
         u_final(ind_nor_rem(i)) = optimal_set.u(i,optimal_set.cluster_index(ind_nor_rem(i)));
         if u_final(ind_nor_rem(i)) < u_limit
-            optimal_set.cluster_index(ind_nor_rem(i)) = 255;
+            optimal_set.cluster_index(ind_nor_rem(i)) = 254;
         end
     end
     optimal_set.typicallity = u_final;
     optimal_set = rmfield(optimal_set,'u');
 end
-
 end
