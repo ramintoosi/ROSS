@@ -23,7 +23,7 @@ ROSS provides useful tools for spike detection, automatic sorting and manual sor
 
 - Detection
 
-  You can load raw extracellular data and adjust the provided settings for filtering and thresholding. Then by pushing 'detect' button the detection results appear in a PCA plot:
+  You can load raw extracellular data and adjust the provided settings for filtering and thresholding. Then by pushing **Start Detection** button the detection results appear in a PCA plot:
 
 ![Spike Detecttion](https://github.com/ramintoosi/ROSS/blob/master/figs/detect_image.png?raw=true)
 
