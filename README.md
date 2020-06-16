@@ -43,7 +43,7 @@ ROSS provides useful tools for spike detection, automatic sorting and manual sor
   
   Several 2D and 3D visualization tools are provided, including inter spike interval, neuron live time, waveforms, 3D plot, and PCA domain plots. Also, you can track detected spikes on the raw data.
 
-![Visualization](https://github.com/ramintoosi/ROSS/blob/master/figs/visualization.jpg?raw=true)
+![Visualization](https://github.com/ramintoosi/ROSS/blob/master/figs/visualization.PNG?raw=true)
 
 For more instructions and samples please visit [ROSS documentation](https://gitlab.com/dinashi/ross/-/blob/master/documentation.pdf), [demo video](https://youtu.be/yQ38ej5RkeA) or [ROSS webpage](https://ramintoosi.github.io/ROSS/).
 
