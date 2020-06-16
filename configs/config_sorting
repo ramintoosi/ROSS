@@ -1,0 +1,1 @@
+{"alignment":{"max_shift":10,"n_peaks":3,"number_of_hist_bins":75,"comparison_mode":"index"},"stat_filter":{"max_std":3,"max_mean":1,"max_percent_of_outliers":5},"sort":{"type":"t dist","nu":20,"g_max":9,"g_min":1,"max_iter":500,"u_lim":0.01,"N":15,"n_pca":5,"n_pca_max":5,"random_seed":561371,"error":0.1,"uni_Gama":false}}
