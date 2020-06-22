@@ -45,7 +45,7 @@ ROSS provides useful tools for spike detection, automatic sorting and manual sor
 
 ![Visualization](https://github.com/ramintoosi/ROSS/blob/master/figs/visualization.PNG?raw=true)
 
-For more instructions and samples please visit [ROSS documentation](https://gitlab.com/dinashi/ross/-/blob/master/documentation.pdf), [demo video](https://youtu.be/yQ38ej5RkeA) or [ROSS webpage](https://ramintoosi.github.io/ROSS/).
+For more instructions and samples please visit [ROSS documentation](https://gitlab.com/dinashi/ross/-/blob/master/documentation.pdf), [demo video](https://youtu.be/oxzwZB4WSaI) or [ROSS webpage](https://ramintoosi.github.io/ROSS/).
 
 # Acknowledgment
 Thanks to [Plot Big](https://www.mathworks.com/matlabcentral/fileexchange/40790-plot-big).
