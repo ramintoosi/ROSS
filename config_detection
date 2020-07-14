@@ -1,1 +1,0 @@
-{"thr_method":"median","side":"negative","spike_filter_type":"butter","spike_filter_order":4,"spike_Rp":300,"spike_Rs":3000,"pre_thresh":40,"post_thresh":59,"dead_time":20,"sampling_rate":40000}
