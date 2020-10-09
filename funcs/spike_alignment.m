@@ -5,7 +5,7 @@ function [newSpikeMat,newSpikeTime] = spike_alignment(SpikeMat,SpikeTime, ss)
 max_shift = ss.alignment.max_shift;
 
 % upsampling rate is considered 10
-r_upsample = 10;
+r_upsample = 1;
 [n_spike,n_feat] = size(SpikeMat);
 n_upsample = r_upsample * n_feat;
 
@@ -15,17 +15,20 @@ max_spline_align_shift = r_upsample*max_shift;
 n_peaks = ss.alignment.n_peaks;
 n_bin = ss.alignment.number_of_hist_bins;
 
-ind_min = zeros(n_spike,1);
-ind_max = zeros(n_spike,1);
+% ind_min = zeros(n_spike,1);
+% ind_max = zeros(n_spike,1);
 
 % finding min and max indices for each spike
-for i = 1 : size(SpikeMat,1)
-    % cubic spline interpolation, S contains values corresponding to
-    % the query points in linspace(1,n_feat,n_upsample)
-    S = spline(1:n_feat,SpikeMat(i,:),linspace(1,n_feat,n_upsample));
-    [amp_min(i),ind_min(i)] = min(S);
-    [amp_max(i),ind_max(i)] = max(S);   
-end
+% for i = 1 : size(SpikeMat,1)
+%     % cubic spline interpolation, S contains values corresponding to
+%     % the query points in linspace(1,n_feat,n_upsample)
+%     S = spline(1:n_feat,SpikeMat(i,:),linspace(1,n_feat,n_upsample));
+%     [amp_min(i),ind_min(i)] = min(S);
+%     [amp_max(i),ind_max(i)] = max(S);   
+% end
+
+[amp_min,ind_min] = min(SpikeMat,[],2);
+[amp_max,ind_max] = max(SpikeMat,[],2);
 
 if strcmpi(ss.alignment.comparison_mode, 'index')
     % grouping samples based on index
