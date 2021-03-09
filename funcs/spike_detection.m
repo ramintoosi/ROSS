@@ -21,6 +21,7 @@ forder = config_struct.spike_filter_order;
 fRp = config_struct.spike_Rp;
 fRs = config_struct.spike_Rs;
 sr = config_struct.sampling_rate;
+threshold_factor = config_struct.threshold_factor;
 
 % ftype is filtering function name ("butter")
 % [b,a] is the transfer function coefficients of filter
@@ -29,14 +30,14 @@ sr = config_struct.sampling_rate;
 % if threshold method is 'wavelet', 'threshold calculater' uses 'Spike'
 % variable without filtering, else zero phase filtering is done first.
 if strcmpi(thr_method,'wavelet')
-    thr = threshold_calculater(thr_method);
+    thr = threshold_calculater(thr_method, threshold_factor);
 end
 
 % filtering 'Spike' before using threshold calcalator for threshold methods
 % other than 'wavelet'
 Spike = filtfilt(b,a,Spike);
 if ~strcmpi(thr_method,'wavelet')
-    thr = threshold_calculater(thr_method);
+    thr = threshold_calculater(thr_method, threshold_factor);
 end
 
 % spike detection
@@ -45,13 +46,14 @@ end
 % filter Spikes between Rp and Rs provided in config file.
 SpikeMat(SpikeTime==0,:) = [];
 SpikeTime(SpikeTime==0,:) = [];
-
+size(SpikeMat)
+size(SpikeTime)
 clear Spike
 end
 
 %%%%% SUPPORING FUNCTIONS %%%%%
 
-function thr = threshold_calculater(method)
+function thr = threshold_calculater(method, threshold_factor)
 % This function calculates threshold for spike detection. four methods are
 % supported: "median", "wavelet", "plexon", and "energy".
 
@@ -63,19 +65,19 @@ if nargin < 1
 end
 switch(method)
     case "median"
-        thr= 3 * median((abs(Spike))./0.6745);
+        thr= threshold_factor * median((abs(Spike))./0.6745);
     case "wavelet"
         %  computing the wavelet decomposition of Spike at level 2 
         %  using 'db3' wavelet
         [c,l] = wavedec(Spike,2,'db3');
         % estimating noise of 1-D wavelet coefficients [c,l]
-        thr = 5*wnoisest(c,l,2);
+        thr = threshold_factor*wnoisest(c,l,2);
     case "plexon"
         % full signal sigma
         full_signal_sigma = std(Spike);
         % applying fake positive negative threshold
         indx_discard = (Spike > 2.7*full_signal_sigma) | (Spike < -2.7*full_signal_sigma);
-        thr = 4*std(Spike(~indx_discard));
+        thr = threshold_factor*std(Spike(~indx_discard));
     case "energy"
         % a constant threshold independent from Spike
         thr = 0.065;
