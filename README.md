@@ -1,6 +1,9 @@
-# ROSS
+# Update 06 July 2021
+Our paper is accepted at **Scientific Reports** and is now publicly available (**Open Access**) at [this link](https://www.nature.com/articles/s41598-021-93088-w). 
 
-ROSS is an offline spike sorting software implemented based on the methods described in the paper entitled [An Adaptive Detection for Automatic Spike Sorting Based on Mixture of Skew-t distributions](https://www.biorxiv.org/content/10.1101/2020.06.12.147736v1).
+# ROSS 
+
+ROSS is an offline spike sorting software implemented based on the methods described in the paper entitled [An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions](https://www.nature.com/articles/s41598-021-93088-w). (Official Implementation)
 
 ## Introduction
 Neural activity monitoring is one of the bases of understanding the brain behavior. The recorded extracellular potential is a combination of multiple neurons activities corrupted by noise. A main step in analyzing the extracellular data is to differentiate among different neuron activities. Spike sorting is the process of assigning each detected spike to the corresponding neurons.
@@ -49,3 +52,21 @@ For more instructions and samples please visit [ROSS documentation](https://gith
 
 # Acknowledgment
 Thanks to [Plot Big](https://www.mathworks.com/matlabcentral/fileexchange/40790-plot-big).
+
+# Citation
+If ROSS helps your research, please cite our paper in your publications.
+
+```
+@article{Toosi_2021,
+	doi = {10.1038/s41598-021-93088-w},
+	url = {https://doi.org/10.1038%2Fs41598-021-93088-w},
+	year = 2021,
+	month = {jul},
+	publisher = {Springer Science and Business Media {LLC}},
+	volume = {11},
+	number = {1},
+	author = {Ramin Toosi and Mohammad Ali Akhaee and Mohammad-Reza A. Dehaqani},
+	title = {An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions},
+	journal = {Scientific Reports}
+}
+```
