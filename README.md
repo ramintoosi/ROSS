@@ -1,9 +1,10 @@
-# Update 06 July 2021
-Our paper is accepted at **Scientific Reports** and is now publicly available (**Open Access**) at [this link](https://www.nature.com/articles/s41598-021-93088-w). 
-
 # ROSS 
 
 ROSS is an offline spike sorting software implemented based on the methods described in the paper entitled [An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions](https://www.nature.com/articles/s41598-021-93088-w). (Official Implementation)
+
+## Updates:
+- **28 September 2021:** We are developing ROSS v2 based on **Python** with new features.
+- **06 July 2021:** Our paper is accepted at **Scientific Reports** and is now publicly available (**Open Access**) at [this link](https://www.nature.com/articles/s41598-021-93088-w).
 
 ## Introduction
 Neural activity monitoring is one of the bases of understanding the brain behavior. The recorded extracellular potential is a combination of multiple neurons activities corrupted by noise. A main step in analyzing the extracellular data is to differentiate among different neuron activities. Spike sorting is the process of assigning each detected spike to the corresponding neurons.
