@@ -18,7 +18,7 @@ Recommended System
 
 - 12GB RAM
 
-Download the package to a local folder. Run matlab and navigate to the folder. Then you could easily start Offline Spike Sorter by running “main.mlapp” or typing “main” in the command window.
+Download the package to a local folder. Run matlab and navigate to the folder. Then you could easily start Offline Spike Sorter by running “ross.mlapp” or typing “ross” in the command window.
 
 
 ## Usage
