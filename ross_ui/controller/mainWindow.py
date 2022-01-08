@@ -136,9 +136,11 @@ class MainApp(MainWindow):
             # -----------------------------------------------------------------------------------------------------
 
         elif file_extension == '.csv':
-            temp = np.load(filename)
+            df = pd.read_csv(filename, skiprows = 1)
+            temp = df.to_numpy()
+            address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
             self.raw = temp
-            with open(os.path.join(self.Raw_data_path, os.path.split(filename)[-1][:-4] + '.pkl'), 'wb') as f:
+            with open(address, 'wb') as f:
                 pickle.dump(temp, f)
         else:
             tdms_file = TdmsFile.read(filename)
