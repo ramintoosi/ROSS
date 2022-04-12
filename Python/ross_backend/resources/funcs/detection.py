@@ -35,91 +35,84 @@ def startDetection(user_id):
     dead_time = config.dead_time
     thr_side = config.side_thr
 
+
     if thr_method == 'wavelet':
-        thr = thresholdCalculator(data, 'wavelet')
-        print(thr)
+        thr = threshold_calculator('wavelet', 4, data)
 
-    b, a = scipy.signal.butter(forder, (fRp/(sr/2), fRs/(sr/2)), btype='bandpass')
-
-    data_filtered = scipy.signal.filtfilt(b, a, data)
+    data_filtered = filtering(data, forder, fRp, fRs, sr)
     if not thr_method == 'wavelet':
-        thr = thresholdCalculator(data_filtered, thr_method)
+        thr = threshold_calculator(thr_method, 3, data_filtered)
 
     # spike detection
     SpikeMat, SpikeTime = spike_detector(data_filtered, thr, pre_thr, post_thr, dead_time, thr_side)
 
-    # filter Spikes between Rp and Rs provided in config file.
-    ind = np.where(SpikeTime==0)[0]#indices(SpikeTime, lambda x:(x == 0))
-    SpikeMat = np.delete(SpikeMat, ind, axis=0) #[SpikeTime==0,:] = []
-    SpikeTime = np.delete(SpikeTime, ind, axis=0)#[SpikeTime==0,:] = []
 
     print(SpikeMat.shape, SpikeTime.shape)
     return SpikeMat, SpikeTime
     
 
-def thresholdCalculator(data, method):
+# Threshold
+def threshold_calculator(method, thr_factor, data):
     if method == 'median':
-        thr = 3 * np.median((np.abs(data))/0.6745)
+        thr = thr_factor * np.median((np.abs(data))/0.6745)
     elif method == 'wavelet':
-        print(data.shape)
-        c, l = pyyawt.wavedec(data,2, 'db3')
-        print(c.shape, l.shape)
-        thr = 5*pyyawt.denoising.wnoisest(c,l)[1] # [1] gives results like matlab [0] gives another result
-    else: #'plexon'
+        c, l = pyyawt.wavedec(data, 2, 'db3')
+        thr = thr_factor * pyyawt.denoising.wnoisest(c,l)[1]
+    elif method == 'plexon':
         full_signal_sigma = np.std(data)
         indx_discard = (data > 2.7*full_signal_sigma) | (data < -2.7*full_signal_sigma)
-        thr = 4*np.std(data[np.logical_not(indx_discard)])
+        thr = thr_factor * np.std(data[np.logical_not(indx_discard)])
+    elif method == 'energy':
+        thr = 0.065
+    else:
+        raise Exception('Wrong method of threshold calculator!')
     return thr
 
 
-def spike_detector(data, thr, pre_thr, post_thr, dead_time, thr_side='both'):
-# This function detects spikes and return each spike and its corresponding
-# time. each row of spike mat corresponds to one detected spike.
+# Filtering
+def filtering(data, forder, fRp, fRs, sr):
+    print('inside filtering!')
+    b, a = scipy.signal.butter(forder, (fRp/(sr/2), fRs/(sr/2)), btype='bandpass')
+    print('after b, a')
+    data_filtered = scipy.signal.filtfilt(b, a, data)
+    print('after filtfilt!')
+    return data_filtered
 
-    n_points_per_spike = pre_thr + post_thr + 1
-    if thr_side == "mean":
-        # automatic choice between positive and negative based on sign of mean
+
+# Spike Detector
+def spike_detector(data, thr, pre_thresh, post_thresh, dead_time, side):
+    n_points_per_spike = pre_thresh + post_thresh + 1
+
+    # Thresholding
+    if side == "mean":
         sign_mean = np.sign(np.mean(data))
         if sign_mean > 0:
-            thr_side = "positive"
+            side = "positive"
         else:
-            thr_side = "negative"
+            side = "negative"
 
-    # thresholding
-    if thr_side == "both":
+    if side == "both":
         spike_detected = (data > thr) | (data < -thr)
-    elif thr_side == "positive":
+    elif side == "positive":
         spike_detected = (data > thr)
-    elif thr_side == "negative":
+    elif side == "negative":
         spike_detected = (data < -thr)
     else:
         raise Exception
 
-    # ind_det: indices of non-zero detected points
     ind_det = np.nonzero(spike_detected)[0]
+
     for i, i_s in enumerate(ind_det):
-        # i_s = ind_det[i]
         if spike_detected[i_s] == 0:
             continue
-        # if post_thresh + dead_time does not exceed spike length
-        if i_s + n_points_per_spike - pre_thr + dead_time <= len(data):  # -1 from matlab eliminated
-            # finding minimum amplitude in post threshold + dead_time
-            ind_min = np.argmin(data[i_s:i_s + n_points_per_spike - pre_thr  + dead_time])  # -1 from matlab eliminated
-            # removing possible detection in post threshold + dead_time
-            # interval after the current detected index including current index
-            spike_detected[i_s:i_s + n_points_per_spike - pre_thr  + dead_time] = 0  # -1 from matlab eliminated
-            # setting minimum index as detected
-            spike_detected[i_s+ind_min] = True
-        # else: post_thresh + dead_time exceeds spike length,
+        if i_s + n_points_per_spike - pre_thresh + dead_time <= len(data):
+            ind_min = np.argmin(data[i_s:i_s + n_points_per_spike - pre_thresh + dead_time])
+            spike_detected[i_s:i_s + n_points_per_spike - pre_thresh + dead_time] = 0
+            spike_detected[i_s + ind_min] = True
         else:
-            # finding minimum amplitude in remaining spike samples
             ind_min = np.argmin(data[i_s:])
-            # removing possible detection after the current detected index 
-            # including current index
             spike_detected[i_s:] = 0
-            # setting minimum index as detected 
-            spike_detected[i_s+ind_min] = True  # -1 from matlab eliminated
-
+            spike_detected[i_s + ind_min] = True
 
     # update detected indices by throwing away unwanted detections
     indx_spikes = np.nonzero(spike_detected)[0]
@@ -129,18 +122,13 @@ def spike_detector(data, thr, pre_thr, post_thr, dead_time, thr_side='both'):
 
     # assigning SpikeMat and SpikeTime matrices
     for i, curr_indx in enumerate(indx_spikes):
-        # curr_indx = indx_spikes[i]
         # check if all indices of the spike waveform are inside signal
-        if (((curr_indx - pre_thr) > -1) and (curr_indx - pre_thr + n_points_per_spike) <= len(data)):# removing -1
-            SpikeMat[i,:] = data[curr_indx - pre_thr : curr_indx - pre_thr + n_points_per_spike]# removing -1
+        if (((curr_indx - pre_thresh) > -1) and (curr_indx - pre_thresh + n_points_per_spike) <= len(data)):
+            SpikeMat[i, :] = data[curr_indx - pre_thresh: curr_indx - pre_thresh + n_points_per_spike]
             SpikeTime[i] = curr_indx + 1
 
-    # ind_rm = (np.sum(SpikeMat,1) == 0)  # 2 -> 1
-    # SpikeMat = np.delete(SpikeMat, ind_rm, axis=0) # = []
-    # SpikeTime= np.delete(SpikeTime, ind_rm)#[ind_rm] = []
+    ind_rm = np.where(SpikeTime == 0)[0]
+    SpikeMat = np.delete(SpikeMat, ind_rm, axis=0)
+    SpikeTime = np.delete(SpikeTime, ind_rm, axis=0)
 
     return SpikeMat, SpikeTime
-
-
-# def indices(a, func):
-#     return [i for (i, val) in enumerate(a) if func(val)]
