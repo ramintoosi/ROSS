@@ -2,44 +2,43 @@ from flask_restful import Resource, reqparse
 import flask
 from flask import request, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.data import DetectResultModel
+from models.data import SortResultModel
 
 
-class DetectionResultDefault(Resource):
+class SortingResultDefault(Resource):
     parser = reqparse.RequestParser()
-    parser.add_argument('raw', type=str, required=True, help="This field cannot be left blank!")
+    parser.add_argument('cluster', type=str, required=True, help="This field cannot be left blank!")
 
     @jwt_required
     def get(self):
         user_id = get_jwt_identity()
-        detect_result = DetectResultModel.find_by_user_id(user_id)
-        if detect_result:
+        sort_result = SortResultModel.find_by_user_id(user_id)
+        if sort_result:
             # b = io.BytesIO()
             # b.write(raw.raw)
             # b.seek(0)
-
             # d = np.load(b, allow_pickle=True)
             # print(d['raw'].shape)
             # b.close()
             # print(raw.user_id, raw.project_id)
-            if detect_result.data:
-                response = flask.make_response(detect_result.data)
+            if sort_result.data:
+                response = flask.make_response(sort_result.data)
                 response.headers.set('Content-Type', 'application/octet-stream')
                 return response
 
-        return {'message': 'Detection Result Data does not exist'}, 404
+        return {'message': 'Sort Result Data does not exist'}, 404
 
     @jwt_required
     def post(self):
         filestr = request.data
         user_id = get_jwt_identity()
-        if DetectResultModel.find_by_user_id(user_id):
+        if SortResultModel.find_by_user_id(user_id):
             return {'message': "Detection Result already exists."}, 400
 
         # data = RawData.parser.parse_args()
 
         # print(eval(data['raw']).shape)
-        data = DetectResultModel(user_id=user_id, data=filestr)  # data['raw'])
+        data = SortResultModel(user_id=user_id, data=filestr)  # data['raw'])
 
         try:
             data.save_to_db()
@@ -51,17 +50,17 @@ class DetectionResultDefault(Resource):
     @jwt_required
     def delete(self):
         user_id = get_jwt_identity()
-        data = DetectResultModel.find_by_user_id(user_id)
+        data = SortResultModel.find_by_user_id(user_id)
         if data:
             data.delete_from_db()
-            return {'message': 'Detection Result Data deleted.'}
-        return {'message': 'Detection Result Data does not exist.'}, 404
+            return {'message': 'Sort Result Data deleted.'}
+        return {'message': 'Sort Result Data does not exist.'}, 404
 
     @jwt_required
     def put(self):
         filestr = request.data
         user_id = get_jwt_identity()
-        data = DetectResultModel.find_by_user_id(user_id)
+        data = SortResultModel.find_by_user_id(user_id)
         if data:
             data.data = filestr
             try:
@@ -71,7 +70,7 @@ class DetectionResultDefault(Resource):
             return "Success", 201
 
         else:
-            data = DetectResultModel(user_id, data=filestr)
+            data = SortResultModel(user_id, data=filestr)
         try:
             data.save_to_db()
         except:

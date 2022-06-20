@@ -95,6 +95,7 @@ class RawData(Resource):
 
         return "Success", 201
 
+
 class RawDataDefault(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('raw', type=str, required=True, help="This field cannot be left blank!")

@@ -7,7 +7,7 @@ class UserModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80))
     password = db.Column(db.String(80))
-    project = db.relationship('ProjectModel', backref='user', cascade="all,delete,delete-orphan")
+    projects = db.relationship('ProjectModel', backref='user', uselist=False, cascade="all,delete,delete-orphan")
     # projects = db.relationship('ProjectModel', back_populates="user")
     # raw = db.relationship('RawModel', lazy='dynamic')
 
@@ -16,11 +16,7 @@ class UserModel(db.Model):
         self.password = password
 
     def json(self):
-        # return {
-        #     'id': self.id,
-        #     'username': self.username
-        # }
-        return {'name': self.username, 'projects': [project.json() for project in self.projects.all()]}
+        return {'name': self.username, 'projects': self.projects.json()}
 
     def get_id(self):
         return int(self.id)
@@ -37,7 +33,6 @@ class UserModel(db.Model):
     def find_by_id(cls, _id):
         return cls.query.filter_by(id=_id).first()
 
-        
     def delete_from_db(self):
         db.session.delete(self)
         db.session.commit()

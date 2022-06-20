@@ -11,6 +11,7 @@ class ProjectModel(db.Model):
     config_sort = db.relationship('ConfigSortModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
     raw = db.relationship('RawModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
     detection_result = db.relationship('DetectResultModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
+    sorting_result = db.relationship('SortResultModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
     # user = db.relationship('UserModel', backref="projects", lazy=True)
     # raw = db.relationship('RawModel', back_populates="project")
 

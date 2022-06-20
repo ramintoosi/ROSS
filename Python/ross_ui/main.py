@@ -13,7 +13,6 @@ def main():
     window = MainApp()
     window.show()
 
-
     # Run execution loop.
     return app.exec_()
 

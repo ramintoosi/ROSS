@@ -34,8 +34,9 @@ class HDF5Plot(pg.PlotCurveItem):
         self.limit = 10000 # maximum number of samples to be plotted
         pg.PlotCurveItem.__init__(self, *args, **kwds)
         
-    def setHDF5(self, data):
+    def setHDF5(self, data, pen=None):
         self.hdf5 = data
+        self.pen = pen
         self.updateHDF5Plot()
         
     def viewRangeChanged(self):
@@ -93,6 +94,8 @@ class HDF5Plot(pg.PlotCurveItem):
             
         self.setData(visible) # update the plot
         self.setPos(start, 0) # shift to match starting index
+        if self.pen is not None:
+            self.setPen(self.pen)
         self.resetTransform()
         self.scale(scale, 1)  # scale to match downsampling
 

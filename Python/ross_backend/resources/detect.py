@@ -7,6 +7,7 @@ from resources.funcs.detection import startDetection
 import io
 import numpy as np
 
+
 class Detect(Resource):
     parser = reqparse.RequestParser(bundle_errors=True)
     parser.add_argument('filter_type', type=str, required=True, choices=('butter'))
@@ -21,7 +22,6 @@ class Detect(Resource):
     parser.add_argument('dead_time', type=int, required=True)
     parser.add_argument('run_detection', type=bool, default=False)  
 
-
     @jwt_required         
     def get(self, name):
         user_id = get_jwt_identity() 
@@ -32,7 +32,6 @@ class Detect(Resource):
         if config:
             return config.json()
         return {'message': 'Detection config does not exist'}, 404
-
 
     @jwt_required
     def post(self, name):
@@ -45,7 +44,6 @@ class Detect(Resource):
             return {'message': "Config Detection already exists."}, 400
 
         data = Detect.parser.parse_args()
-
 
         config = ConfigDetectionModel(user_id, **data, project_id=proj.id)
 
@@ -63,7 +61,6 @@ class Detect(Resource):
 
         return config.json(), 201
 
-
     @jwt_required
     def delete(self, name):
         user_id = get_jwt_identity() 
@@ -75,7 +72,6 @@ class Detect(Resource):
             config.delete_from_db()
             return {'message': 'Detection config deleted.'}
         return {'message': 'Detection config does not exist.'}, 404
-
 
     @jwt_required
     def put(self, name):    
@@ -104,6 +100,7 @@ class Detect(Resource):
                 return {"message": "An error occurred inserting detection config."}, 500
 
             return config.json(), 201
+
 
 class DetectDefault(Resource):
     parser = reqparse.RequestParser(bundle_errors=True)
@@ -135,7 +132,6 @@ class DetectDefault(Resource):
 
         data = Detect.parser.parse_args()
 
-
         config = ConfigDetectionModel(user_id, **data)
 
         try:
@@ -152,7 +148,6 @@ class DetectDefault(Resource):
 
         return config.json(), 201
 
-
     @jwt_required
     def delete(self):
         user_id = get_jwt_identity() 
@@ -162,11 +157,11 @@ class DetectDefault(Resource):
             return {'message': 'Detection config deleted.'}
         return {'message': 'Detection config does not exist.'}, 404
 
-
     @jwt_required
-    def put(self):    
+    def put(self):
         data = DetectDefault.parser.parse_args()
-        user_id = get_jwt_identity() 
+        print('data = ', data)
+        user_id = get_jwt_identity()
         config = ConfigDetectionModel.find_by_user_id(user_id)
         if config:
             config.filter_type = data['filter_type']
@@ -185,7 +180,6 @@ class DetectDefault(Resource):
             except:
                 return {"message": "An error occurred inserting detection config."}, 500
 
-       
         else:
             config = ConfigDetectionModel(user_id, **data)
             try:
@@ -194,7 +188,6 @@ class DetectDefault(Resource):
                 return {"message": "An error occurred inserting detection config."}, 500
         if data['run_detection']:
             try:
-                print('starting Detection ...')
                 spikeMat, spikeTime = startDetection(user_id)
                 buffer = io.BytesIO()
                 np.savez_compressed(buffer, spike_mat=spikeMat, spike_time=spikeTime)

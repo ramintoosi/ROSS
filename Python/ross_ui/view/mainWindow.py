@@ -1,3 +1,4 @@
+import pyqtgraph.widgets.MultiPlotWidget
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
@@ -33,7 +34,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # for test
         c1 = {'index':0}
         c2 = {'index':1}
-        self.clusters = [c1, c2, c1, c2, c1, c2, c1, c2, c1, c2, c1, c2, c1, c2, c1, c2, c1, c2, c1, c2]
+        c3 = {'index':2}
+        c4 = {'index':3}
+        c5 = {'index':4}
+
+        self.clusters = [c1, c2, c3, c4, c5]
 
         self.mdiArea = QMdiArea(self)
         self.mdiArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
@@ -46,7 +51,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.createToolbars()
         self.createMenubar()
         self.createStatusbar()
-
 
     def createActions(self):
         """Create actions used in menu bar and tool bars."""
@@ -89,7 +93,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.importDetectedAct = QtWidgets.QAction(self.tr("&Detection Result"), self)
         self.importDetectedAct.setStatusTip(self.tr("Import Detection Result"))
         self.importDetectedAct.setIcon(QtGui.QIcon(icon_path + "Import.png"))       
-        # self.importDetectedAct.triggered.connect(self.onImportDetected)
+        self.importDetectedAct.triggered.connect(self.onImportDetected)
 
         self.importSortedAct = QtWidgets.QAction(self.tr("&Sorting Result"), self)
         self.importSortedAct.setStatusTip(self.tr("Import Sorting Result"))
@@ -151,16 +155,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.undoAct.setStatusTip(self.tr("Undo"))
         self.undoAct.setIcon(QtGui.QIcon(icon_path + 'Undo.png'))
         self.undoAct.setShortcut(QtGui.QKeySequence.Undo)
-        # self.undoAct.triggered.connect(self.onUndo) 
+        # self.undoAct.triggered.connect(self.onUndo)
 
         self.clustersListAct = []
-        for c in self.clusters:  
+        for c in self.clusters:
             temp = QtWidgets.QAction("Cluster " + str(c['index']+1), self)
             temp.setCheckable(True)
             self.clustersListAct.append(temp)
         # self.clustersListAct = tuple(self.clustersListAct)
-
-        
 
         # Action for refreshing readable items.
         self.refreshAct = QtWidgets.QAction(self.tr("&Refresh"), self)
@@ -177,11 +179,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusbarAct.toggled.connect(self.onToggleStatusBar)
 
         # Actions for toggling subwindows
-        self.clustersAct = QtWidgets.QAction(self.tr("&Clusters"), self)
-        self.clustersAct.setCheckable(True)
-        self.clustersAct.setChecked(True)
-        self.clustersAct.setStatusTip(self.tr("Show or hide the clusters window"))       
-        self.clustersAct.triggered.connect(self.onClusters)
+        #self.clustersAct = QtWidgets.QAction(self.tr("&Clusters"), self)
+        #self.clustersAct.setCheckable(True)
+        #self.clustersAct.setChecked(True)
+        #self.clustersAct.setStatusTip(self.tr("Show or hide the clusters window"))
+        #self.clustersAct.triggered.connect(self.onPlotClusters)
 
         self.waveformsAct = QtWidgets.QAction(self.tr("&Waveforms"), self)
         self.waveformsAct.setCheckable(True)
@@ -200,12 +202,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.settingsAct.setChecked(True)
         self.settingsAct.setStatusTip(self.tr("Show or hide the settings window"))       
         self.settingsAct.triggered.connect(self.onSettings)
-
-        self.visualizationAct = QtWidgets.QAction(self.tr("&Visualizations"), self)
-        self.visualizationAct.setCheckable(True)
-        self.visualizationAct.setChecked(False)
-        self.visualizationAct.setStatusTip(self.tr("Show or hide the visualizations window"))       
-        self.visualizationAct.triggered.connect(self.onVisualization)     
 
         # Actions to show about dialog.
         self.aboutAct = QtWidgets.QAction(self.tr("&About"), self)
@@ -248,10 +244,42 @@ class MainWindow(QtWidgets.QMainWindow):
         self.serverAddressAct = QtWidgets.QAction(QtGui.QIcon(icon_path + 'server.png'), self.tr("&Server Address"), self)
         self.serverAddressAct.triggered.connect(self.open_server_dialog)
 
-        # # sign up action
-        # self.signUpAct = QtWidgets.QAction(QtGui.QIcon('Icons/login.png'), "Log In", self)
-        # self.logInAct.setStatusTip(self.tr("Sign In"))
-        # self.logInAct.setIcon(QtGui.QIcon('Icons/login.png'))       
+        # mode act
+        self.plotAct = QtWidgets.QAction(self.tr("&Mode"), self)
+        #self.plotAct.setCheckable(True)
+        #self.plotAct.setChecked(False)
+        self.plotAct.setStatusTip(self.tr("Plotting Clusters"))
+        self.plotAct.triggered.connect(self.onVisPlot)
+
+        self.detect3dAct = QtWidgets.QAction(self.tr("&Detection Histogram 3D"))
+        #self.detect3dAct.setCheckable(True)
+        #self.detect3dAct.setChecked(False)
+        self.detect3dAct.setStatusTip(self.tr("Plotting 3D histogram of detection result"))
+        self.detect3dAct.triggered.connect(self.onDetect3D)
+
+        self.clusterwaveAct = QtWidgets.QAction(self.tr("&Plotting Clusters Waveforms"))
+        #self.clusterwaveAct.setCheckable(True)
+        #self.clusterwaveAct.setChecked(False)
+        self.clusterwaveAct.setStatusTip(self.tr("Plotting Waveforms of Each Cluster"))
+        self.clusterwaveAct.triggered.connect(self.onPlotClusterWave)
+
+        self.livetimeAct = QtWidgets.QAction(self.tr("&Plotting LiveTime"))
+        #self.livetimeAct.setCheckable(True)
+        #self.livetimeAct.setChecked(False)
+        self.livetimeAct.setStatusTip(self.tr("Plotting Histogram of LiveTime"))
+        self.livetimeAct.triggered.connect(self.onPlotLiveTime)
+
+        self.isiAct = QtWidgets.QAction(self.tr("&Plotting ISI Histogram"))
+        #self.isiAct.setCheckable(True)
+        #self.isiAct.setChecked(False)
+        self.isiAct.setStatusTip(self.tr("Plotting Inter Spike Interval Histogram"))
+        self.isiAct.triggered.connect(self.onPlotIsi)
+
+        self.plot3dAct = QtWidgets.QAction(self.tr("&3D Plot"))
+        #self.plot3dAct.setCheckable(True)
+        #self.plot3dAct.setChecked(False)
+        self.plot3dAct.setStatusTip(self.tr("Plotting 3D plots"))
+        self.plot3dAct.triggered.connect(self.onPlot3d)
 
     def createToolbars(self):
         """Create tool bars and setup their behaviors (floating or static)."""
@@ -266,28 +294,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toolbar.addAction(self.saveAct)
         self.toolbar.addSeparator()
         
-        self.toolbar.addAction(self.importRawAct)
-        self.toolbar.addAction(self.importDetectedAct)
-        self.toolbar.addAction(self.importSortedAct)
-        self.toolbar.addAction(self.exportRawAct)
-        self.toolbar.addAction(self.exportDetectedAct)
-        self.toolbar.addAction(self.exportSortedAct)
-        self.toolbar.addSeparator()
-       
-        self.toolbar.addAction(self.mergeAct)
-        self.toolbar.addAction(self.removeAct)     
-        self.toolbar.addAction(self.resortAct)
-        self.toolbar.addAction(self.denoiseAct)  
-        self.toolbar.addAction(self.assignAct)
-        self.toolbar.addAction(self.groupAct)     
-        self.toolbar.addAction(self.pcaRemoveAct)
-        self.toolbar.addAction(self.undoAct)   
-        self.toolbar.addSeparator()  
-       
-        self.toolbar.addAction(self.detectAct)     
-        self.toolbar.addAction(self.sortAct)
-        self.toolbar.addAction(self.batchAct) 
-        self.toolbar.addSeparator()             
+        # self.toolbar.addAction(self.importRawAct)
+        # self.toolbar.addAction(self.importDetectedAct)
+        # self.toolbar.addAction(self.importSortedAct)
+        # self.toolbar.addAction(self.exportRawAct)
+        # self.toolbar.addAction(self.exportDetectedAct)
+        # self.toolbar.addAction(self.exportSortedAct)
+        # self.toolbar.addSeparator()
+        #
+        # self.toolbar.addAction(self.mergeAct)
+        # self.toolbar.addAction(self.removeAct)
+        # self.toolbar.addAction(self.resortAct)
+        # self.toolbar.addAction(self.denoiseAct)
+        # self.toolbar.addAction(self.assignAct)
+        # self.toolbar.addAction(self.groupAct)
+        # self.toolbar.addAction(self.pcaRemoveAct)
+        # self.toolbar.addAction(self.undoAct)
+        # self.toolbar.addSeparator()
+        #
+        # self.toolbar.addAction(self.detectAct)
+        # self.toolbar.addAction(self.sortAct)
+        # self.toolbar.addAction(self.batchAct)
+        # self.toolbar.addSeparator()
         self.toolbar.addAction(self.refreshAct)
         self.toolbar.addSeparator()
         spacerWidget = QtWidgets.QWidget()
@@ -303,11 +331,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toolbarAct = self.toolbar.toggleViewAction() # Get predefined action from toolbar.
         self.toolbarAct.setStatusTip(self.tr("Show or hide the toolbar in the current window"))
 
-        self.addToolBarBreak()
-        self.toolbar_clusters = QtWidgets.QToolBar('Clusters Indices')
-        self.toolbar_clusters.addActions(self.clustersListAct)
-        self.addToolBar(QtCore.Qt.TopToolBarArea, self.toolbar_clusters)
-
+        # self.addToolBarBreak()
+        # self.toolbar_clusters = QtWidgets.QToolBar('Clusters Indices')
+        # self.toolbar_clusters.addActions(self.clustersListAct)
+        # self.addToolBar(QtCore.Qt.TopToolBarArea) #, self.toolbar_clusters)
 
     def createMenubar(self):
         """Create menu bar with entries."""
@@ -329,9 +356,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toolMenu = self.menuBar().addMenu(self.tr("&Tools"))
         self.toolMenu.addActions((self.mergeAct, self.removeAct, self.resortAct, self.denoiseAct, self.assignAct, self.groupAct, self.pcaRemoveAct, self.undoAct))
 
-        self.toolMenu.addSeparator()
-        self.menuSelectedClusters = self.toolMenu.addMenu("&Select Clusters")
-        self.menuSelectedClusters.addActions(self.clustersListAct)
+        # self.toolMenu.addSeparator()
+        # self.menuSelectedClusters = self.toolMenu.addMenu("&Select Clusters")
+        # self.menuSelectedClusters.addActions(self.clustersListAct)
 
         # run menu
         self.runMenu = self.menuBar().addMenu(self.tr("&Run"))
@@ -344,19 +371,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.viewMenu.addAction(self.refreshAct)
         self.viewMenu.addSeparator()
         
-        self.viewMenu.addAction(self.clustersAct)
+        #self.viewMenu.addAction(self.clustersAct)
         self.viewMenu.addAction(self.waveformsAct)      
         self.viewMenu.addAction(self.rawDataAct) 
         self.viewMenu.addAction(self.settingsAct)
-        self.viewMenu.addAction(self.visualizationAct)  
         self.viewMenu.addSeparator()
 
         self.viewMenu.addAction(self.toolbar.toggleViewAction())
         self.viewMenu.addAction(self.statusbarAct)
 
+        # Menu entry for visualization
+        self.visMenu = self.menuBar().addMenu(self.tr("&Visualization"))
+        self.visMenu.addAction(self.detect3dAct)
+        self.visMenu.addAction(self.clusterwaveAct)
+        self.visMenu.addAction(self.livetimeAct)
+        self.visMenu.addAction(self.isiAct)
+        self.visMenu.addAction(self.plot3dAct)
+
         # Menu entry for options
         self.optionMenu = self.menuBar().addMenu(self.tr("&Options"))
-
         self.optionMenu.addAction(self.serverAddressAct)
         self.optionMenu.addAction(self.logInAct)
         self.optionMenu.addAction(self.logOutAct)
@@ -370,12 +403,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.loginWidget.addAction(self.logInAct)
         # self.menuBar().setCornerWidget(self.loginWidget, QtCore.Qt.TopRightCorner)
 
-
     def createStatusbar(self):
         """Create status bar and content."""
         self.statusBar()
         self.statusBar().showMessage(self.tr("Ready."))
-
 
     def showEvent(self, event):
         if self.isVisible() and self.is_first_time:
@@ -389,84 +420,144 @@ class MainWindow(QtWidgets.QMainWindow):
 
             
             self.w_mdi = self.mdiArea.geometry().width()
-            self.h_mdi = self.mdiArea.geometry().height()-self.toolbar.height()/2-self.statusBar().height()-self.toolbar_clusters.height()/2
-            
-            # print(self.w_mdi, self.h_mdi)
-            self.resize(800,600)
+            self.h_mdi = self.mdiArea.geometry().height()-self.toolbar.height()/2-self.statusBar().height() #-self.toolbar_clusters.height()/2
+            self.resize(800, 600)
             self.showMaximized()
 
             self.align_subwindows()
             
             self.is_first_time = False
 
-
     def align_subwindows(self):  
 
-        self.subwindow_waveforms.setGeometry(0,0,int(self.w_mdi/2),int(self.h_mdi*2/3))
-        self.subwindow_clusters.setGeometry(int(self.w_mdi/2),0,int(self.w_mdi/2),int(self.h_mdi*2/3))
-        self.subwindow_raw.setGeometry(0,int(self.h_mdi*2/3),int(self.w_mdi*3/4),int(self.h_mdi/3))
-        self.subwindow_settings.setGeometry(int(self.w_mdi*3/4),int(self.h_mdi*2/3),int(self.w_mdi/4), int(self.h_mdi/3))
-        self.subwindow_visualization.setGeometry(0,0,int(self.w_mdi/2),int(self.h_mdi*2/3))
-        self.subwindow_visualization.setVisible(False)
+        self.subwindow_waveforms.setGeometry(0,0,int(self.w_mdi*5/8),int(self.h_mdi*2/3))
+        self.subwindow_clusters.setGeometry(int(self.w_mdi*5/8),0,int(self.w_mdi*3/8),int(self.h_mdi*2/3))
+        self.subwindow_raw.setGeometry(0,int(self.h_mdi*2/3),int(self.w_mdi*5/8),int(self.h_mdi/3))
+        self.subwindow_settings.setGeometry(int(self.w_mdi*5/8),int(self.h_mdi*2/3),int(self.w_mdi*3/8), int(self.h_mdi/3))
+        self.subwindow_detect3d.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
+        self.subwindow_detect3d.setVisible(False)
+        #self.subwindow_clusterwave.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
+        #self.subwindow_clusterwave.setVisible(False)
+        #self.subwindow_livetime.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
+        #self.subwindow_livetime.setVisible(False)
+        #self.subwindow_isi.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
+        #self.subwindow_isi.setVisible(False)
+        self.subwindow_3d.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
+        self.subwindow_3d.setVisible(False)
+        self.subwindow_assign.setGeometry(int(self.w_mdi / 2), int(self.h_mdi / 2), int(self.w_mdi / 4), int(self.h_mdi * 1 / 3))
+        self.subwindow_assign.setVisible(False)
+        self.subwindow_resort.setGeometry(int(self.w_mdi / 2), int(self.h_mdi / 2), int(self.w_mdi / 8), int(self.h_mdi * 1 / 4))
+        self.subwindow_resort.setVisible(False)
 
         self.mdiArea.activateNextSubWindow()
-    
-
 
     def createSubWindows(self):
-        # widget = self.mainWidget   
-
-        # waveforms subwindow     
+        # waveforms subwindow
         self.widget_waveform = PlotWidget()
 
         # clusters subwindow
-        self.widget_clusters = QtWidgets.QWidget()#PlotWidget()
+        self.plot_clusters = pg.GraphicsLayoutWidget()
 
-        self.plot_clusters = gl.GLViewWidget()
-        self.plot_clusters.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.axis1ComboBox = QtWidgets.QComboBox()
-        self.axis2ComboBox = QtWidgets.QComboBox()
-        self.axis3ComboBox = QtWidgets.QComboBox()
-        # self.axis1ComboBox.setMaximumWidth(80) 
-        # self.axis2ComboBox.setMaximumWidth(80)
-        # self.axis3ComboBox.setMaximumWidth(80)
-
-        axisWidget = QtWidgets.QWidget()
-        axisLayout = QtWidgets.QHBoxLayout()
-        label = QtWidgets.QLabel('axis 1')
-        # label.setMaximumWidth(40)
-        axisLayout.addWidget(label)
-        axisLayout.addWidget(self.axis1ComboBox)
-        label = QtWidgets.QLabel('axis 2')
-        # label.setMaximumWidth(40)
-        axisLayout.addWidget(label)  
-        axisLayout.addWidget(self.axis2ComboBox)
-        label = QtWidgets.QLabel('axis 3')
-        # label.setMaximumWidth(40)
-        axisLayout.addWidget(label)  
-        axisLayout.addWidget(self.axis3ComboBox)     
-        axisLayout.addStretch(1)  
-        axisWidget.setLayout(axisLayout)
-
-        layout_sub_clusters = QtWidgets.QGridLayout()  
-        layout_sub_clusters.addWidget(axisWidget)   
-        layout_sub_clusters.addWidget(self.plot_clusters)
-        self.widget_clusters.setLayout(layout_sub_clusters)
+        # self.widget_clusters = QtWidgets.QWidget()#PlotWidget()
+        #layout_sub_clusters3d = QtWidgets.QGridLayout()
+        #layout_sub_clusters = pg.ViewBox()
+        #layout_sub_clusters.addWidget(axisWidget)
+        #layout_sub_clusters.addWidget(self.plot_clusters)
+        #self.widget_clusters.setLayout(layout_sub_clusters)
+        #self.widget_clusters.se
 
         # raw data
         self.widget_raw = PlotWidget()
 
+        # raw data revised
+        #self.widget_raw = PlotWidget()
+
         # settings
-        self.widget_settings = QtWidgets.QWidget()#QTabWidget()
-        
+        self.widget_settings = QtWidgets.QWidget()
         self.tabs_settings = QtWidgets.QTabWidget(self.widget_settings)
-        # self.widget_settings.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.detectSettingWidget = QtWidgets.QWidget()
 
+        # detect3d
+        self.widget_detect3d = QtWidgets.QWidget()
+        layout_detect3d = QtWidgets.QVBoxLayout(self.widget_detect3d)
+        self.plot_detect3d = gl.GLViewWidget()
+        self.plot_detect3d.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.plot_detect3d.setCameraPosition(distance=250)
+        self.closeButton3dDet = QtWidgets.QPushButton(text='Close')
+        layout_detect3d.addWidget(self.closeButton3dDet)
+        layout_detect3d.addWidget(self.plot_detect3d)
+        self.widget_detect3d.setLayout(layout_detect3d)
+
+        # Plot Clusters Waveform
+        # self.widget_clusterwaveform =  pyqtgraph.widgets.MultiPlotWidget.MultiPlotWidget()
+
+        # Plot Live Time
+        # self.widget_livetime = QtWidgets.QWidget()
+
+        # Plot ISI
+        # self.widget_isi = QtWidgets.QWidget()
+
+        # 3D Plot
+        self.widget_3d = QtWidgets.QWidget()
+        self.plot_3d = gl.GLViewWidget()
+        self.plot_3d.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        layout_plot_3d = QtWidgets.QGridLayout()
+
+        self.axis1ComboBox = QtWidgets.QComboBox()
+        self.axis1ComboBox.addItem("PCA1")
+        self.axis1ComboBox.addItem("PCA2")
+        self.axis1ComboBox.addItem("PCA3")
+        self.axis1ComboBox.addItem("time")
+        self.axis1ComboBox.addItem("p2p")
+        self.axis1ComboBox.addItem("duty")
+        self.axis1ComboBox.setCurrentIndex(0)
+
+        self.axis2ComboBox = QtWidgets.QComboBox()
+        self.axis2ComboBox.addItem("PCA1")
+        self.axis2ComboBox.addItem("PCA2")
+        self.axis2ComboBox.addItem("PCA3")
+        self.axis2ComboBox.addItem("time")
+        self.axis2ComboBox.addItem("p2p")
+        self.axis2ComboBox.addItem("duty")
+        self.axis2ComboBox.setCurrentIndex(1)
+
+        self.axis3ComboBox = QtWidgets.QComboBox()
+        self.axis3ComboBox.addItem("PCA1")
+        self.axis3ComboBox.addItem("PCA2")
+        self.axis3ComboBox.addItem("PCA3")
+        self.axis3ComboBox.addItem("time")
+        self.axis3ComboBox.addItem("p2p")
+        self.axis3ComboBox.addItem("duty")
+        self.axis3ComboBox.setCurrentIndex(2)
+
+        self.closeButton3d = QtWidgets.QPushButton(text='Close')
+
+        self.plotButton = QtWidgets.QPushButton(text='Plot')
+
+        axisWidget = QtWidgets.QWidget()
+        axisLayout = QtWidgets.QHBoxLayout()
+        label = QtWidgets.QLabel('axis 1')
+        axisLayout.addWidget(label)
+        axisLayout.addWidget(self.axis1ComboBox)
+        label = QtWidgets.QLabel('axis 2')
+        axisLayout.addWidget(label)
+        axisLayout.addWidget(self.axis2ComboBox)
+        label = QtWidgets.QLabel('axis 3')
+        axisLayout.addWidget(label)
+        axisLayout.addWidget(self.axis3ComboBox)
+        axisLayout.addStretch(5)
+        axisLayout.addWidget(self.plotButton)
+        axisLayout.addWidget(self.closeButton3d)
+        axisWidget.setLayout(axisLayout)
+
+        layout_plot_3d.addWidget(axisWidget)
+        layout_plot_3d.addWidget(self.plot_3d)
+        self.widget_3d.setLayout(layout_plot_3d)
+
         # detection settings
-        
         self.filterType = QtWidgets.QComboBox()
         self.filterType.addItems(["butterworth"])
+        self.filterType.resize(self.filterType.sizeHint())
         self.filterOrder = QtWidgets.QSpinBox()
         self.passFreq = QtWidgets.QLineEdit()
         self.passFreq.setValidator(QtGui.QIntValidator())
@@ -496,11 +587,10 @@ class MainWindow(QtWidgets.QMainWindow):
         layoutDetection.addLayout(filterTypeLayout, 0, 0)
 
         # layoutDetection.setColumnStretch(0, 1)
-
         filterOrderLayout = QtWidgets.QHBoxLayout()
         filterOrderLayout.addWidget(QtWidgets.QLabel('Filter Order'))
         filterOrderLayout.addWidget(self.filterOrder)
-        layoutDetection.addLayout(filterOrderLayout, 0, 2)
+        layoutDetection.addLayout(filterOrderLayout, 0, 1)
 
         passFreqLayout = QtWidgets.QHBoxLayout()
         passFreqLayout.addWidget(QtWidgets.QLabel('Pass Frequency'))
@@ -510,7 +600,7 @@ class MainWindow(QtWidgets.QMainWindow):
         stopFreqLayout = QtWidgets.QHBoxLayout()
         stopFreqLayout.addWidget(QtWidgets.QLabel('Stop Frequency'))
         stopFreqLayout.addWidget(self.stopFreq)
-        layoutDetection.addLayout(stopFreqLayout, 1, 2)
+        layoutDetection.addLayout(stopFreqLayout, 1, 1)
 
         samplingRateLayout = QtWidgets.QHBoxLayout()
         samplingRateLayout.addWidget(QtWidgets.QLabel('Sampling Rate'))
@@ -520,7 +610,7 @@ class MainWindow(QtWidgets.QMainWindow):
         thresholdMethodLayout = QtWidgets.QHBoxLayout()
         thresholdMethodLayout.addWidget(QtWidgets.QLabel('Threshold Method'))
         thresholdMethodLayout.addWidget(self.thresholdMethod)
-        layoutDetection.addLayout(thresholdMethodLayout, 2, 2)
+        layoutDetection.addLayout(thresholdMethodLayout, 2, 1)
 
         signalSideLayout = QtWidgets.QHBoxLayout()
         signalSideLayout.addWidget(QtWidgets.QLabel('Signal Side'))
@@ -530,7 +620,7 @@ class MainWindow(QtWidgets.QMainWindow):
         preThresholdLayout = QtWidgets.QHBoxLayout()
         preThresholdLayout.addWidget(QtWidgets.QLabel('Pre-Threshold'))
         preThresholdLayout.addWidget(self.preThreshold)
-        layoutDetection.addLayout(preThresholdLayout, 3, 2)
+        layoutDetection.addLayout(preThresholdLayout, 3, 1)
 
         postThresholdLayout = QtWidgets.QHBoxLayout()
         postThresholdLayout.addWidget(QtWidgets.QLabel('Post-Threshold'))
@@ -540,7 +630,7 @@ class MainWindow(QtWidgets.QMainWindow):
         deadTimeLayout = QtWidgets.QHBoxLayout()
         deadTimeLayout.addWidget(QtWidgets.QLabel('Dead Time'))
         deadTimeLayout.addWidget(self.deadTime)
-        layoutDetection.addLayout(deadTimeLayout, 4, 2)
+        layoutDetection.addLayout(deadTimeLayout, 4, 1, QtCore.Qt.AlignRight)
 
         layoutDetection.addWidget(self.startDetection, 5, 0)
 
@@ -640,7 +730,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.randomSeed = QtWidgets.QLineEdit()
         # self.randomSeed.setValidator(QtGui.QIntValidator())
         self.sortingType = QtWidgets.QComboBox()
-        self.sortingType.addItems(['t dist', 'skew-t dist', 'GMM', 'K-means', 'template matching'])
+        self.sortingType.addItems(['t dist', 'skew-t dist', 'GMM', 'K-means'])
         
         self.error = QtWidgets.QLineEdit()
         self.error.setValidator(QtGui.QIntValidator())
@@ -725,7 +815,7 @@ class MainWindow(QtWidgets.QMainWindow):
         matching_modeLayout.addWidget(QtWidgets.QLabel('matching mode'))
         matching_modeLayout.addWidget(self.matching_mode)
         layoutSorting.addLayout(matching_modeLayout, 2, 1)
-        
+
         self.sortSettingsWidget.setLayout(layoutSorting)
 
         ############################################################################################################
@@ -733,42 +823,108 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabs_sorting.addTab(self.alignmentSettingsWidget, "Alignment")
         self.tabs_sorting.addTab(self.filteringSettingsWidget, "Statistical Filtering")
         self.tabs_sorting.addTab(self.sortSettingsWidget, "Sorting")
-
         layout_sort_settings = QtWidgets.QVBoxLayout()
         layout_sort_settings.addWidget(self.tabs_sorting)
-        self.startSorting = QtWidgets.QPushButton(text="Start Sorting")
 
+        self.startSorting = QtWidgets.QPushButton(text="Start Sorting")
         layout_sort_settings.addWidget(self.startSorting)
         self.sortingSettingWidget.setLayout(layout_sort_settings)
 
+        self.manualSettingWidget = QtWidgets.QWidget()
+        self.layout_manual_sorting = QtWidgets.QGridLayout()
+        self.manualActWidget = QtWidgets.QListWidget()
+        manual_act_list_layout = QtWidgets.QVBoxLayout()
+        actLabel = QtWidgets.QLabel("Select Action : ", self)
+        actLabel.setWordWrap(True)
+        manual_act_list_layout.addWidget(actLabel)
+        merge = QtWidgets.QListWidgetItem("Merge")
+        self.manualActWidget.addItem(merge)
+        remove = QtWidgets.QListWidgetItem("Remove")
+        self.manualActWidget.addItem(remove)
+        assign = QtWidgets.QListWidgetItem("Assign to nearest")
+        self.manualActWidget.addItem(assign)
+        pca_group = QtWidgets.QListWidgetItem("PCA Group")
+        self.manualActWidget.addItem(pca_group)
+        pca_remove = QtWidgets.QListWidgetItem("PCA Remove")
+        self.manualActWidget.addItem(pca_remove)
+        resort = QtWidgets.QListWidgetItem('Resort')
+        self.manualActWidget.addItem(resort)
+        self.manualActWidget.setCurrentItem(merge)
+        scroll_bar = QtWidgets.QScrollBar(self)
+        scroll_bar.setStyleSheet("background : lightgreen;")
+        self.manualActWidget.setVerticalScrollBar(scroll_bar)
+        manual_act_list_layout.addWidget(self.manualActWidget)
+        self.layout_manual_sorting.addLayout(manual_act_list_layout, 0, 0)
+        hlayout = QtWidgets.QHBoxLayout()
+        self.actManual = QtWidgets.QPushButton(text='Act')
+        hlayout.addWidget(self.actManual)
+        self.plotManual = QtWidgets.QPushButton(text='Plot')
+        hlayout.addWidget(self.plotManual)
+        self.undoManual = QtWidgets.QPushButton(text='Undo')
+        hlayout.addWidget(self.undoManual)
+        self.resetManual = QtWidgets.QPushButton(text='Reset')
+        hlayout.addWidget(self.resetManual)
+        self.saveManual = QtWidgets.QPushButton(text='Save')
+        hlayout.addWidget(self.saveManual)
+        self.layout_manual_sorting.addLayout(hlayout, 1, 0)
+        self.manualSettingWidget.setLayout(self.layout_manual_sorting)
 
-        self.batchSettingWidget = QtWidgets.QWidget()
-        
         self.tabs_settings.addTab(self.detectSettingWidget, "Detection")
         self.tabs_settings.addTab(self.sortingSettingWidget, "Automatic Sorting")
-        self.tabs_settings.addTab(self.batchSettingWidget, "Batch Sorting")
+        self.tabs_settings.addTab(self.manualSettingWidget, "Manual Sorting")
 
         layout_settings = QtWidgets.QHBoxLayout()
         layout_settings.addWidget(self.tabs_settings)
         self.widget_settings.setLayout(layout_settings)
-        self.widget_visualizations = QtWidgets.QWidget()
+
+        self.widget_assign_manual = QtWidgets.QWidget()
+        self.layout_assign_manual = QtWidgets.QGridLayout()
+
+        self.widget_resort_manual = QtWidgets.QWidget()
+        self.layout_resort_manual = QtWidgets.QGridLayout()
+
+        desktop_size = QtWidgets.QDesktopWidget().screenGeometry()
+        w = desktop_size.width()
+        h = desktop_size.height()
+        self.widget_settings.setMaximumSize(int(w * (2.65)/8), int(h/3))
+
         self.mdiArea.addSubWindow(self.widget_waveform).setWindowTitle("Waveforms")
-        self.mdiArea.addSubWindow(self.widget_clusters).setWindowTitle("Clusters")
+        self.mdiArea.addSubWindow(self.plot_clusters).setWindowTitle("2D PCA Plot")
+        # self.mdiArea.addSubWindow(self.widget_clusters).setWindowTitle("Clusters")
         self.mdiArea.addSubWindow(self.widget_raw).setWindowTitle("Raw Data")
         self.mdiArea.addSubWindow(self.widget_settings).setWindowTitle("Settings")
-        self.mdiArea.addSubWindow(self.widget_visualizations).setWindowTitle("Visualizations")
-        
+        # self.mdiArea.addSubWindow(self.widget_visualizations).setWindowTitle("Visualizations")
+        self.mdiArea.addSubWindow(self.widget_detect3d).setWindowTitle("DetectionResult 3D Hist")
+        # self.mdiArea.addSubWindow(self.widget_clusters).setWindowTitle("Waveforms")
+        # self.mdiArea.addSubWindow(self.widget_clusterwaveform).setWindowTitle("Plot Clusters Waveforms")
+        # self.mdiArea.addSubWindow(self.widget_livetime).setWindowTitle("Live Time")
+        # self.mdiArea.addSubWindow(self.widget_isi).setWindowTitle("ISI")
+        self.mdiArea.addSubWindow(self.widget_3d).setWindowTitle("3D Plot")
+        self.mdiArea.addSubWindow(self.widget_assign_manual).setWindowTitle("Assign to Nearest")
+        self.mdiArea.addSubWindow(self.widget_resort_manual).setWindowTitle("Resort")
+
+
         subwindow_list = self.mdiArea.subWindowList()
         self.subwindow_waveforms = subwindow_list[0]
         self.subwindow_clusters = subwindow_list[1]
         self.subwindow_raw = subwindow_list[2]
         self.subwindow_settings = subwindow_list[3]
-        self.subwindow_visualization = subwindow_list[4]
+        # self.subwindow_visualization = subwindow_list[4]
+        self.subwindow_detect3d = subwindow_list[4]
+        self.subwindow_3d = subwindow_list[5]
+        self.subwindow_assign = subwindow_list[6]
+        self.subwindow_resort = subwindow_list[7]
+        #self.subwindow_clusterwave = subwindow_list[5]
+        #self.subwindow_livetime = subwindow_list[6]
+        #self.subwindow_isi = subwindow_list[7]
+
         for subwindow in subwindow_list:
             subwindow.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowMaximizeButtonHint | QtCore.Qt.WindowFullscreenButtonHint | QtCore.Qt.WindowTitleHint)
 
 
     #################################################################################
     #################################################################################
+
+
     
 

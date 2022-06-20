@@ -17,8 +17,10 @@ class MultiLine(pg.QtGui.QGraphicsPathItem):
         self.path = pg.arrayToQPath(x.flatten(), y.flatten(), connect.flatten())
         pg.QtGui.QGraphicsPathItem.__init__(self, self.path)
         self.setPen(pg.mkPen('w'))
+
     def shape(self): # override because QGraphicsPathItem.shape is too expensive.
         return pg.QtGui.QGraphicsItem.shape(self)
+
     def boundingRect(self):
         return self.path.boundingRect()
 

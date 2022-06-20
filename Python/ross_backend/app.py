@@ -1,15 +1,19 @@
 from flask import Flask, jsonify
+import flask.scaffold
+flask.helpers._endpoint_from_view_func = flask.scaffold._endpoint_from_view_func
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
 from resources.data import RawData, RawDataDefault
 from resources.detection_result import DetectionResultDefault
+from resources.sorting_result import SortingResultDefault
 from resources.detect import Detect, DetectDefault
 # from resources.alignment import Alignment
 # from resources.filtering import Filtering
-from resources.sort import SortDefault
+from resources.sort import SortDefault, Sort
 from resources.project import Project, Projects
+from resources.resort import Resort
 
 from flask_jwt import JWT
 
@@ -26,7 +30,6 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 
 app.secret_key = 'g!\x8d3\xd8\xaa\n{A[\xff\xfe\x08\x05\xd7\x85'
 
-
 api = Api(app)
 
 
@@ -34,11 +37,11 @@ api = Api(app)
 def create_tables():
     db.create_all()
 
+
 app.config['JWT_BLACKLIST_ENABLED'] = True  # enable blacklist feature
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']  # allow blacklisting for access and refresh tokens
 jwt = JWTManager(app)
 
-# jwt = JWT(app, authenticate, identity)  # /auth
 
 # This method will check if a token is blacklisted, and will be called automatically when blacklist is enabled
 @jwt.token_in_blacklist_loader
@@ -87,21 +90,26 @@ def revoked_token_callback():
         'error': 'token_revoked'
     }), 401      
 
+
 api.add_resource(UserRegister, '/register')
 api.add_resource(UserLogin, '/login')
 api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
+api.add_resource(User, '/user/<int:user_id>')
 
 api.add_resource(RawData, '/raw/<string:name>')
 api.add_resource(RawDataDefault, '/raw')
 api.add_resource(DetectDefault, '/detect')
 api.add_resource(Detect, '/detect/<string:name>')
 api.add_resource(SortDefault, '/sort')
+api.add_resource(Sort, '/sort/<string:name>')
+api.add_resource(Resort, '/resort')
 # api.add_resource(Alignment, '/auto_sorting/alignment')
 # api.add_resource(Filtering, '/auto_sorting/filter')
 # api.add_resource(Sort, '/auto_sorting/sort')
 
 api.add_resource(DetectionResultDefault, '/detection_result')
+api.add_resource(SortingResultDefault, '/sorting_result')
 # api.add_resource(Template, '/auto_sorting/template')
 # api.add_resource(DetectionResult, '/detect/result')
 # api.add_resource(SortResult, '/auto_sorting/result')
