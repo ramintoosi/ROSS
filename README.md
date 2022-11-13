@@ -14,7 +14,7 @@ ROSS is a MATLAB based offline spike sorter software which helps the researchers
 
 Recommended System
 
-- MATLAB > 2018a
+- MATLAB >= 2018b
 
 - 12GB RAM
 
