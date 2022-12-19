@@ -15,11 +15,9 @@ class ProjectModel(db.Model):
     # user = db.relationship('UserModel', backref="projects", lazy=True)
     # raw = db.relationship('RawModel', back_populates="project")
 
-    def __init__(self, user_id, name=None, isDefault=True):
+    def __init__(self, user_id, name=None):
         self.name = name
         self.user_id = user_id
-        if isDefault:
-            self.id = 0
 
     def json(self):
         return {'name': self.name, 'id': self.id}

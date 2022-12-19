@@ -55,13 +55,13 @@ class ConfigDetectionModel(db.Model):
     def get(cls):
         return cls.query.first()
 
-    @classmethod
-    def find_by_user_id(cls, _id):
-        return cls.query.filter_by(user_id=_id, project_id=0).first()
+    # @classmethod
+    # def find_by_user_id(cls, _id):
+    #     return cls.query.filter_by(user_id=_id).first()
 
     @classmethod
-    def find_by_project_id(cls, user_id, project_id):
-        return cls.query.filter_by(user_id=user_id, project_id=project_id).first()
+    def find_by_project_id(cls, project_id):
+        return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):
         db.session.delete(self)
@@ -164,13 +164,13 @@ class ConfigSortModel(db.Model):
     def get(cls):
         return cls.query.first()
 
-    @classmethod
-    def find_by_user_id(cls, _id):
-        return cls.query.filter_by(user_id=_id, project_id=0).first()
+    # @classmethod
+    # def find_by_user_id(cls, _id):
+    #     return cls.query.filter_by(user_id=_id, project_id=0).first()
 
     @classmethod
-    def find_by_project_id(cls, user_id, project_id):
-        return cls.query.filter_by(user_id=user_id, project_id=project_id).first()
+    def find_by_project_id(cls,project_id):
+        return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):
         db.session.delete(self)
