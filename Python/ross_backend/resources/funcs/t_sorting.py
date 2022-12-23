@@ -80,9 +80,9 @@ def t_dist_sorter(alignedSpikeMat, sdd):
         print('EM Alg. Started...')
         while ((delta_L > delta_L_limit) or (delta_v > delta_v_limit)) and itr < max_iter:
             print('iteration number = ', itr)
-            print('g = ', g)
-            print('Pi = ', Pi)
-            print('#' * 5)
+            # print('g = ', g)
+            # print('Pi = ', Pi)
+            # print('#' * 5)
             n_sigma = Sigma.shape[2]
             detSigma = np.zeros((1, n_sigma))
             rep = np.reshape(np.tile(np.expand_dims(np.arange(g), 1), (1, n_spike)), (g * n_spike, 1))
@@ -99,7 +99,12 @@ def t_dist_sorter(alignedSpikeMat, sdd):
                                                   (diffs[rep == i, :].T), 2), axis=0).T)
 
             c = gamma((v + n_feat) / 2) / (gamma(v / 2) * np.power(np.pi * v, (n_feat / 2)))
-            P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
+            if n_sigma > 1:
+                P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
+            else:
+                P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(detSigma[0])
+
+            # P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
 
             # Membership
             num_z = np.tile(np.expand_dims(Pi, axis=0), (n_spike, 1)) * P
@@ -147,7 +152,7 @@ def t_dist_sorter(alignedSpikeMat, sdd):
             yt = np.dot(a_yt, np.linalg.pinv(b_yt))
             y = np.real(-np.sum(yt, axis=0))
             v = 2 / (y + np.log(y) - 1) + 0.0416 * (
-                        1 + scipy.special.erf(0.6594 * np.log(2.1971 / (y + np.log(y) - 1))))
+                    1 + scipy.special.erf(0.6594 * np.log(2.1971 / (y + np.log(y) - 1))))
             v = v[0]
 
             # Probability (t-dist)
@@ -167,7 +172,14 @@ def t_dist_sorter(alignedSpikeMat, sdd):
                                                   (diffs[rep == i, :].T), 2), axis=0).T)
 
             c = gamma((v + n_feat) / 2) / (gamma(v / 2) * np.power(np.pi * v, (n_feat / 2)))
-            P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
+
+            if n_sigma > 1:
+                P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
+            else:
+                print("we are here")
+                P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(detSigma[0])
+
+            # P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
 
             # Update L
             min_mess_len_criterion = N / 2 * np.sum(
@@ -186,30 +198,42 @@ def t_dist_sorter(alignedSpikeMat, sdd):
 
             itr += 1
             if itr == max_iter:
-                raise Exception('CONVERGENCE FAILED FOR delta_L')
+                Warning('CONVERGENCE FAILED FOR delta_L')
 
             indx_remove = np.squeeze((Pi == 0))
             mu = mu[np.logical_not(indx_remove)]
             Sigma = Sigma[:, :, indx_remove == False]
+            if len(Sigma.shape) > 3:
+                Sigma = Sigma[:, :, :, 0]
             Pi = Pi[indx_remove == False]
+            if len(Pi.shape) > 2:
+                Pi = Pi[:, :, 0]
             # Pi = np.array([d for (d, remove) in zip(Pi, indx_remove) if not remove])
             z = z[:, indx_remove == False]
+            if len(z.shape) > 2:
+                z = z[:, :, 0]
             # z = np.array([d for (d, remove) in zip(z, indx_remove) if not remove])
             u = u[:, indx_remove == False]
+            if len(u.shape) > 2:
+                u = u[:, :, 0]
             # u = np.array([d for (d, remove) in zip(u, indx_remove) if not remove])
             P = P[:, indx_remove == False]
+            if len(P.shape) > 2:
+                P = P[:, :, 0]
             # P = np.array([d for (d, remove) in zip(P, indx_remove) if not remove])
             delta_distance = delta_distance[:, indx_remove == False]
+            if len(delta_distance.shape) > 2:
+                delta_distance = delta_distance[:, :, 0]
             # delta_distance = np.array([d for (d, remove) in zip(delta_distance, indx_remove) if not remove])
             g = g - np.sum(indx_remove, axis=0)
             g = g
 
-            print('Sigma Shape : ', Sigma.shape)
-            print('Pi shape : ', Pi.shape)
-            print('z shape : ', z.shape)
-            print('u shape : ', u.shape)
-            print('P shape : ', P.shape)
-            print('delta distance shape : ', delta_distance.shape)
+            # print('Sigma Shape : ', Sigma.shape)
+            # print('Pi shape : ', Pi.shape)
+            # print('z shape : ', z.shape)
+            # print('u shape : ', u.shape)
+            # print('P shape : ', P.shape)
+            # print('delta distance shape : ', delta_distance.shape)
 
         print('...Em Done!')
 
@@ -235,9 +259,4 @@ def t_dist_sorter(alignedSpikeMat, sdd):
         delta_distance = np.array([d for (d, remove) in zip(delta_distance, indx_remove) if not remove])
         g = g - 1
 
-    print('clusters', out['cluster_index'])
-
     return out['cluster_index']
-
-
-

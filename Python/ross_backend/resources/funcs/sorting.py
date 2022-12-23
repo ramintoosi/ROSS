@@ -1,5 +1,6 @@
 from models.data import DetectResultModel
 from models.config import ConfigSortModel
+import pickle
 import io
 import numpy as np
 from resources.funcs.sort_utils import *
@@ -9,33 +10,31 @@ from resources.funcs.kmeans import *
 from resources.funcs.gmm import *
 
 
-def startSorting(user_id):
-    detect_result = DetectResultModel.find_by_user_id(user_id)
+def startSorting(project_id):
+    detect_result = DetectResultModel.find_by_project_id(project_id)
     if not detect_result:
         raise Exception("No detection result exists.")
 
     if not detect_result.data:
         raise Exception("No detection result exists.")
 
-    config = ConfigSortModel.find_by_user_id(user_id)
+    config = ConfigSortModel.find_by_project_id(project_id)
     if not config:
         raise Exception("No sorting config exists.")
 
-    b = io.BytesIO()
-    b.write(detect_result.data)
-    b.seek(0)
+    with open(detect_result.data, 'rb') as f:
+        d = pickle.load(f)
 
-    d = np.load(b, allow_pickle=True)
-
-    spike_mat = d['spike_mat']
-    spike_time = d['spike_time']
+    spike_mat = d['spikeMat']
+    spike_time = d['spikeTime']
 
     if config.alignment:
         spike_mat, spike_time = spike_alignment(spike_mat, spike_time, config)
 
+    # TODO : CHECK AND CORRECT
     if config.filtering:
         pass
-        #REM = spikeFiltering(spike_mat, config)
+        # REM = spikeFiltering(spike_mat, config)
 
     print('config.sorting_type : ', config.sorting_type)
 
@@ -50,3 +49,46 @@ def startSorting(user_id):
 
     return optimal_set
 
+
+def startReSorting(project_id, clusters, selected_clusters):
+    detect_result = DetectResultModel.find_by_project_id(project_id)
+    if not detect_result:
+        raise Exception("No detection result exists.")
+
+    if not detect_result.data:
+        raise Exception("No detection result exists.")
+
+    config = ConfigSortModel.find_by_project_id(project_id)
+    if not config:
+        raise Exception("No sorting config exists.")
+
+    with open(detect_result.data, 'rb') as f:
+        d = pickle.load(f)
+
+    spike_mat = d['spikeMat']
+    spike_time = d['spikeTime']
+
+    # if config.alignment:
+    #     spike_mat, spike_time = spike_alignment(spike_mat, spike_time, config)
+
+    # TODO : CHECK AND CORRECT
+    if config.filtering:
+        pass
+        # REM = spikeFiltering(spike_mat, config)
+
+    print('config.sorting_type : ', config.sorting_type)
+
+    spike_mat = np.array(spike_mat)[np.isin(clusters, selected_clusters), :]
+
+    if config.sorting_type == 't dist':
+        optimal_set = t_dist_sorter(spike_mat, config)
+    elif config.sorting_type == 'skew-t dist':
+        optimal_set = skew_t_sorter(spike_mat, config)
+    elif config.sorting_type == 'K-means':
+        optimal_set = kmeans(spike_mat, config)
+    elif config.sorting_type == 'GMM':
+        optimal_set = gmm_sorter(spike_mat, config)
+
+    clusters = np.array(clusters)
+    clusters[np.isin(clusters, selected_clusters)] = optimal_set + np.max(clusters) + 1
+    return clusters.tolist()
