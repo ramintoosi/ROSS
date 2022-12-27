@@ -38,9 +38,11 @@ class UserRegister(Resource):
         user_id = user.get_id()
         proj = ProjectModel(user_id)  # create a default project for user
         proj.save_to_db()
-        config_detect = ConfigDetectionModel(user_id)  # create a default detection config for the default project
+        user.project_default = proj.id
+        user.save_to_db()
+        config_detect = ConfigDetectionModel(user_id, project_id=proj.id)  # create a default detection config for the default project
         config_detect.save_to_db()
-        config_sort = ConfigSortModel(user_id)
+        config_sort = ConfigSortModel(user_id, project_id=proj.id)
         config_sort.save_to_db()
 
         return {"message": "User created successfully."}, 201
@@ -48,16 +50,24 @@ class UserRegister(Resource):
 
 class UserLogin(Resource):
     def post(self):
-        data = _user_parser.parse_args()
 
+        data = _user_parser.parse_args()
         user = UserModel.find_by_username(data['username'])
 
         if user and safe_str_cmp(user.password, data['password']):
             access_token = create_access_token(identity=user.id, fresh=True)
             refresh_token = create_refresh_token(user.id)
+            Project_id = user.project_default
+
+            # return {
+            #            'access_token': access_token,
+            #            'refresh_token': refresh_token
+            #        }, 200
+
             return {
                        'access_token': access_token,
-                       'refresh_token': refresh_token
+                       'refresh_token': refresh_token,
+                       'project_id' : Project_id
                    }, 200
 
         return {"message": "Invalid Credentials!"}, 401

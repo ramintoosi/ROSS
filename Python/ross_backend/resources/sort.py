@@ -1,11 +1,13 @@
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.config import ConfigSortModel
 from models.project import ProjectModel
 from models.data import SortResultModel
-from resources.funcs.sorting import startSorting
-import io
-import numpy as np
+from resources.funcs.sorting import startSorting, startReSorting
+import traceback
+from models.user import UserModel
+from uuid import uuid4
+import pickle
 
 
 class Sort(Resource):
@@ -41,7 +43,6 @@ class Sort(Resource):
     parser.add_argument('max_iter', type=int, required=True)
     parser.add_argument('alignment', type=bool, required=True)
     parser.add_argument('filtering', type=bool, required=True)
-
     parser.add_argument('run_sorting', type=bool, default=False)
 
     @jwt_required
@@ -109,6 +110,7 @@ class Sort(Resource):
             try:
                 config.save_to_db()
             except:
+                print(traceback.format_exc())
                 return {"message": "An error occurred inserting detection config."}, 500
 
             return config.json(), 201
@@ -119,6 +121,7 @@ class Sort(Resource):
             try:
                 config.save_to_db()
             except:
+                print(traceback.format_exc())
                 return {"message": "An error occurred inserting detection config."}, 500
 
             return config.json(), 201
@@ -141,7 +144,7 @@ class SortDefault(Resource):
     # sort settings
     parser.add_argument('nu', type=float, required=True)
     parser.add_argument('max_iter', type=int, required=True)
-    parser.add_argument('PCA_num', type=int, required=True)  
+    parser.add_argument('PCA_num', type=int, required=True)
     parser.add_argument('g_max', type=int, required=True)
     parser.add_argument('g_min', type=int, required=True)
     parser.add_argument('u_lim', type=float, required=True)
@@ -149,47 +152,31 @@ class SortDefault(Resource):
     parser.add_argument('tol', type=float, required=True)
     parser.add_argument('N', type=int, required=True)
     parser.add_argument('matching_mode', type=str, required=True, choices=('Euclidean', 'Chi_squared', 'Correlation'))
-    parser.add_argument('alpha', type=float, required=True)       
-    parser.add_argument('combination', type=bool, required=True)    
+    parser.add_argument('alpha', type=float, required=True)
+    parser.add_argument('combination', type=bool, required=True)
     parser.add_argument('custom_template', type=bool, required=True)
-    parser.add_argument('sorting_type', type=str, choices=('t dist', 'skew-t dist', 'GMM', 'K-means', 'template matching'), required=True)
+    parser.add_argument('sorting_type', type=str,
+                        choices=('t dist', 'skew-t dist', 'GMM', 'K-means', 'template matching'), required=True)
     parser.add_argument('max_iter', type=int, required=True)
     parser.add_argument('alignment', type=bool, required=True)
     parser.add_argument('filtering', type=bool, required=True)
 
     parser.add_argument('run_sorting', type=bool, default=False)
 
+    # -------------------------------------------------------------
+    parser.add_argument('project_id', type=int, required=True)
+    parser.add_argument('clusters', type=list, default=None)
+    parser.add_argument('selected_clusters', type=list, default=None)
+
     @jwt_required
     def get(self):
-        user_id = get_jwt_identity() 
-        config = ConfigSortModel.find_by_user_id(user_id)
+        user_id = get_jwt_identity()
+        project_id = request.form['project_id']
+        user = UserModel.find_by_id(user_id)
+        config = ConfigSortModel.find_by_project_id(project_id)
         if config:
             return config.json()
         return {'message': 'Sort config does not exist'}, 404
-
-    @jwt_required
-    def post(self):
-        user_id = get_jwt_identity()
-        if ConfigSortModel.find_by_user_id(user_id):
-            return {'message': "Sorting config already exists."}, 400
-
-        data = SortDefault.parser.parse_args()
-
-        config = ConfigSortModel(user_id, **data)
-
-        try:
-            config.save_to_db()
-        except:
-            return {"message": "An error occurred inserting sorting config."}, 500
-
-        if data['run_sorting']:
-            try:
-                print('starting Sorting ...')
-                startSorting(user_id)
-            except:
-                return {"message": "An error occurred in sorting."}, 500
-
-        return config.json(), 201
 
     @jwt_required
     def delete(self):
@@ -204,7 +191,16 @@ class SortDefault(Resource):
     def put(self):
         data = SortDefault.parser.parse_args()
         user_id = get_jwt_identity()
-        config = ConfigSortModel.find_by_user_id(user_id)
+        project_id = data['project_id']
+
+        if 'clusters' in data:
+            clusters = data['clusters']
+            selected_clusters = data['selected_clusters']
+        else:
+            clusters = None
+            selected_clusters = None
+
+        config = ConfigSortModel.find_by_project_id(project_id)
         if config:
             config.max_shift = data['max_shift']
             config.num_peaks = data['num_peaks']
@@ -234,32 +230,47 @@ class SortDefault(Resource):
             try:
                 config.save_to_db()
             except:
+                print(traceback.format_exc())
                 return {"message": "An error occurred inserting sorting config."}, 500
-
 
         else:
             config = ConfigSortModel(user_id, **data)
             try:
                 config.save_to_db()
             except:
+                print(traceback.format_exc())
                 return {"message": "An error occurred inserting sort config."}, 500
 
         if data['run_sorting']:
             try:
                 print('Starting Sorting ...')
-                clusters_index = startSorting(user_id)
-                buffer = io.BytesIO()
-                np.savez_compressed(buffer, clusters=clusters_index)
-                buffer.seek(0)
-                raw_bytes = buffer.read()
-                buffer.close()
-                sortResult = SortResultModel(user_id, raw_bytes)
-                try:
-                    sortResult.save_to_db()
-                except:
-                    return {"message": "An error occurred inserting sorting result."}, 500
 
+                if clusters is not None:
+                    clusters_index = startReSorting(project_id, clusters, selected_clusters)
+                    return {'clusters': clusters_index}, 201
+                else:
+                    clusters_index = startSorting(project_id)
+
+                    data = {"clusters": clusters_index}
+
+                    detection_result_path = '../ross_data/Sort_Result/' + str(uuid4()) + '.pkl'
+                    with open(detection_result_path, 'wb') as f:
+                        pickle.dump(data, f)
+
+                    sortResult = SortResultModel.find_by_project_id(project_id)
+
+                    if sortResult:
+                        sortResult.data = detection_result_path
+                    else:
+                        sortResult = SortResultModel(user_id, detection_result_path, project_id)
+
+                    try:
+                        sortResult.save_to_db()
+                    except:
+                        print(traceback.format_exc())
+                        return {"message": "An error occurred inserting sorting result."}, 500
             except:
+                print(traceback.format_exc())
                 return {"message": "An error occurred in sorting."}, 500
 
         return config.json(), 201
