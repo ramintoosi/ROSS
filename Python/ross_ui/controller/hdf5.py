@@ -97,7 +97,7 @@ class HDF5Plot(pg.PlotCurveItem):
         if self.pen is not None:
             self.setPen(self.pen)
         self.resetTransform()
-        self.scale(scale, 1)  # scale to match downsampling
+        # self.scale(scale, 1)  # scale to match downsampling
 
         
 
