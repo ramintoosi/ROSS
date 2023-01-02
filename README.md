@@ -7,12 +7,12 @@ ROSS v2 (beta) is the Python version of offline spike sorting software implement
 ROSS v2 is implemented based on the client-server architecture. In the beta version, the GUI and processing units are completely separated and their connection is based on Restful APIs. However, at this moment, it only works on one machine and we try to find a good way to optimize the data transfer between the client and the server. In our final release, you would be able to run the light GUI on a simple machine while the data and algorithms would be executed on a separate server in your lab. 
 
 ## Requirements
-- All the requirement packages are listed at requirements.txt file in root path
+- All the requirement packages are listed at enviroments.yml file in root path
 
 ## How to install
 1- Git Clone this repository to your local path.
 
-2- Install the requirements.txt by running : ```pip install -r requirements.txt```
+2- Create a conda enviroment by command : ```conda env create -f enviroment.yml```
 
 ## How to run
 
