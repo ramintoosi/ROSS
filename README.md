@@ -40,27 +40,27 @@ ROSS v2, same as v1, provides useful tools for spike detection, automatic and ma
 - Detection
 
   You can load raw extracellular data and adjust the provided settings for filtering and thresholding. Then by pushing **Start Detection** button the detection results appear in a PCA plot:
-  ![image](/home/phantom/Projects/ROSS_v1/detection.png)
+  ![image](./images/detection.png)
 
 
 - Automatic Sorting
 
   Automatic sorting is implemented based on five different methods: skew-t and t distributions, GMM, k-means and template matching. Several options are provided for configurations in the algorithm. Automatic sorting results will appear in PCA and waveform plots:
- ![image](/home/phantom/Projects/ROSS_v1/sort.png)
+ ![image](./images/sort.png)
 
 - Manual Sorting
 
   Manual sorting tool is used for manual modifications on automatic results by the researcher. These tools include: Merge, Delete, Resort and Manual grouping or deleting samples in PCA domain:
-  ![image](/home/phantom/Projects/ROSS_v1/sort2.png)
+  ![image](./images/sort2.png)
 
 
 - Visualization
   
   - Several visualization tools are provided such as: 3D plot
-  ![image](/home/phantom/Projects/ROSS_v1/vis1.png)
+  ![image](./images/vis1.png)
   
    - Also, inter spike interval, neuron live time and Cluster Waveforms
-  ![image](/home/phantom/Projects/ROSS_v1/vis2.png)
+  ![image](./images/vis2.png)
 
   
 
