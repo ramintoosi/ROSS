@@ -3,8 +3,8 @@
 ROSS is an offline spike sorting software implemented based on the methods described in the paper entitled [An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions](https://www.nature.com/articles/s41598-021-93088-w). (Official Implementation)
 
 ## Updates:
-- **7 January 2022:** Importing .csv files is available on ROSS V2 
-- **1 January 2022:** ROSS v2 (beta) is Released! [link](https://github.com/ramintoosi/ROSS/tree/v2)
+- **7 January 2023:** Importing .csv files is available on ROSS V2 
+- **1 January 2023:** ROSS v2 (beta) is Released! [Click Here!](https://github.com/ramintoosi/ROSS/tree/v2)
 - **28 September 2021:** We are developing ROSS v2 based on **Python** with new features.
 - **06 July 2021:** Our paper is accepted at **Scientific Reports** and is now publicly available (**Open Access**) at [this link](https://www.nature.com/articles/s41598-021-93088-w).
 
