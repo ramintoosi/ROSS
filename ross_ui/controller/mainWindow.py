@@ -48,6 +48,9 @@ class softwareMode(enum.Enum):
 class MainApp(MainWindow):
     def __init__(self):
         super(MainApp, self).__init__()
+
+        self.setWindowIcon(QtGui.QIcon('view/icons/ross.png'))
+
         # initial values for software options
         self.plotHistFlag = False
         self.pca_manual = None
@@ -65,8 +68,8 @@ class MainApp(MainWindow):
         self.spike_mat = None
         self.spike_time = None
 
-        self.Raw_data_path = os.path.join(pathlib.Path(__file__).parent, './ross_data/Raw_Data')
-        self.pca_path = os.path.join(pathlib.Path(__file__).parent, './ross_data/pca_images')
+        self.Raw_data_path = os.path.join(pathlib.Path(__file__).parent, '../ross_data/Raw_Data')
+        self.pca_path = os.path.join(pathlib.Path(__file__).parent, '../ross_data/pca_images')
 
         pathlib.Path(self.Raw_data_path).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.pca_path).mkdir(parents=True, exist_ok=True)

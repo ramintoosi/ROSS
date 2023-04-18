@@ -1,11 +1,12 @@
 import pickle
 import traceback
 from uuid import uuid4
+from pathlib import Path
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource, reqparse, request
 from models.config import ConfigSortModel
-from models.data import SortResultModel
+from models.data import SortResultModel, RawModel
 from models.project import ProjectModel
 from models.user import UserModel
 from resources.funcs.sorting import startSorting, startReSorting
@@ -254,16 +255,18 @@ class SortDefault(Resource):
 
                     data = {"clusters": clusters_index}
 
-                    detection_result_path = '../ross_data/Sort_Result/' + str(uuid4()) + '.pkl'
-                    with open(detection_result_path, 'wb') as f:
+                    sort_result_path = str(Path(RawModel.find_by_project_id(project_id).data).parent /
+                                           (str(uuid4()) + '.pkl'))
+
+                    with open(sort_result_path, 'wb') as f:
                         pickle.dump(data, f)
 
                     sortResult = SortResultModel.find_by_project_id(project_id)
 
                     if sortResult:
-                        sortResult.data = detection_result_path
+                        sortResult.data = sort_result_path
                     else:
-                        sortResult = SortResultModel(user_id, detection_result_path, project_id)
+                        sortResult = SortResultModel(user_id, sort_result_path, project_id)
 
                     try:
                         sortResult.save_to_db()

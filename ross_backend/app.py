@@ -87,18 +87,18 @@ api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
 api.add_resource(User, '/user/<int:user_id>')
 
-api.add_resource(RawData, '/raw/<string:name>')
+# api.add_resource(RawData, '/raw/<string:name>')
 api.add_resource(RawDataDefault, '/raw')
 api.add_resource(DetectDefault, '/detect')
-api.add_resource(Detect, '/detect/<string:name>')
+# api.add_resource(Detect, '/detect/<string:name>')
 api.add_resource(SortDefault, '/sort')
-api.add_resource(Sort, '/sort/<string:name>')
+# api.add_resource(Sort, '/sort/<string:name>')
 
 api.add_resource(DetectionResultDefault, '/detection_result')
 api.add_resource(SortingResultDefault, '/sorting_result')
 
 api.add_resource(Projects, '/projects')
-api.add_resource(Project, '/project/<string:name>')
+# api.add_resource(Project, '/project/<string:name>')
 
 if __name__ == '__main__':
     db.init_app(app)

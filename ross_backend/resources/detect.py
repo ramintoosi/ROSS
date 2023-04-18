@@ -1,12 +1,14 @@
 import pickle
 import traceback
 from uuid import uuid4
+from pathlib import Path
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource, reqparse, request
 from models.config import ConfigDetectionModel
 from models.data import DetectResultModel
 from models.project import ProjectModel
+from models.data import RawModel
 from resources.funcs.detection import startDetection
 
 
@@ -106,7 +108,7 @@ class Detect(Resource):
 
 class DetectDefault(Resource):
     parser = reqparse.RequestParser(bundle_errors=True)
-    parser.add_argument('filter_type', type=str, required=True, choices=('butterworth'))
+    parser.add_argument('filter_type', type=str, required=True, choices='butterworth')
     parser.add_argument('filter_order', type=int, required=True)
     parser.add_argument('pass_freq', type=int, required=True)
     parser.add_argument('stop_freq', type=int, required=True)
@@ -200,7 +202,8 @@ class DetectDefault(Resource):
                 # -------------------------------------------------------
                 print("inserting detection result to database")
 
-                detection_result_path = '../ross_data/Detection_Result/' + str(uuid4()) + '.pkl'
+                detection_result_path = str(Path(RawModel.find_by_project_id(project_id).data).parent / \
+                                        (str(uuid4()) + '.pkl'))
 
                 with open(detection_result_path, 'wb') as f:
                     pickle.dump(data_file, f)
