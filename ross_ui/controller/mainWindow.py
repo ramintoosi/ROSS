@@ -4,6 +4,8 @@ import random
 import time
 import traceback
 from uuid import uuid4
+import enum
+import pathlib
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,6 +21,7 @@ from colour import Color
 from nptdms import TdmsFile
 from shapely.geometry import Point, Polygon
 from sklearn.neighbors import NearestNeighbors
+import pandas as pd
 
 from controller.detectedMatSelect import DetectedMatSelectApp as detected_mat_form
 from controller.detectedTimeSelect import DetectedTimeSelectApp as detected_time_form
@@ -36,10 +39,17 @@ from view.mainWindow import MainWindow
 icon_path = './view/icons/'
 
 
+class softwareMode(enum.Enum):
+    SAME_PALACE = 0
+    CLIENT_SIDE = 1
+    SERVER_SIDE = 2
+
+
 class MainApp(MainWindow):
     def __init__(self):
         super(MainApp, self).__init__()
         # initial values for software options
+        self.plotHistFlag = False
         self.pca_manual = None
         self.image = None
         self.pca_spikes = None
@@ -55,8 +65,11 @@ class MainApp(MainWindow):
         self.spike_mat = None
         self.spike_time = None
 
-        self.Raw_data_path = '../ross_data/Raw_Data'
-        self.pca_path = '../ross_data/pca_images'
+        self.Raw_data_path = os.path.join(pathlib.Path(__file__).parent, './ross_data/Raw_Data')
+        self.pca_path = os.path.join(pathlib.Path(__file__).parent, './ross_data/pca_images')
+
+        pathlib.Path(self.Raw_data_path).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(self.pca_path).mkdir(parents=True, exist_ok=True)
 
         self.user = None
         self.user_name = None
@@ -65,7 +78,7 @@ class MainApp(MainWindow):
         self.plotManualFlag = False
         self.resetManualFlag = False
         self.undoManualFlag = False
-
+        self.mode = softwareMode.SAME_PALACE
         self.tempList = []
 
         self.startDetection.pressed.connect(self.onDetect)
@@ -139,7 +152,7 @@ class MainApp(MainWindow):
             self.raw = temp
             with open(address, 'wb') as f:
                 pickle.dump(temp, f)
-        else:
+        elif file_extension == '.tdms':
             tdms_file = TdmsFile.read(filename)
             i = 0
             for group in tdms_file.groups():
@@ -164,6 +177,9 @@ class MainApp(MainWindow):
             address = os.path.join(self.Raw_data_path, os.path.split(filename)[-1][:-5] + '.pkl')
             with open(address, 'wb') as f:
                 pickle.dump(temp, f)
+
+        else:
+            raise TypeError(f'File type {file_extension} is not supported!')
 
         self.refreshAct.setEnabled(True)
         self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
@@ -1005,16 +1021,15 @@ class MainApp(MainWindow):
                 except:
                     print("an error accrued in manual Merge")
                     print(traceback.format_exc())
-                    pass
             elif act.text() == 'Remove':
                 try:
                     self.removeManual(selected_clusters)
                     self.manualPreparingSorting(self.clusters_tmp.copy())
                     self.updateManualClusterList(self.clusters_tmp.copy())
+                    self.plotHistFlag = True
                 except:
                     print("an error accrued in manual Remove")
                     print(traceback.format_exc())
-                    pass
             elif act.text() == 'Assign to nearest':
                 try:
                     self.assignManual()
@@ -1023,12 +1038,12 @@ class MainApp(MainWindow):
                 except:
                     print("an error accrued in manual Assign to nearest")
                     print(traceback.format_exc())
-                    pass
             elif act.text() == "PCA Remove":
                 try:
                     self.pca_manual = "Remove"
                     self.OnPcaRemove()
                     self.manualPreparingSorting(self.clusters_tmp.copy())
+                    self.plotHistFlag = True
 
                 except:
                     print("an error accrued in manual pcaRemove")
@@ -1053,14 +1068,18 @@ class MainApp(MainWindow):
                 except:
                     print("an error accrued in manual resort")
                     print(traceback.format_exc())
+            if self.autoPlotManualCheck.isChecked():
+                self.onPlotManualSorting()
         except:
             print(traceback.format_exc())
             self.statusBar().showMessage(self.tr("an error accrued in manual act !"), 2000)
 
     def onPlotManualSorting(self):
         # update 2d pca plot
-        self.plotDetectionResult()
         self.plotPcaResult()
+        if self.plotHistFlag:
+            self.plotDetectionResult()
+            self.plotHistFlag = False
 
         if self.plotManualFlag:
             self.updateplotWaveForms(self.clusters_tmp.copy())
@@ -1128,14 +1147,15 @@ class MainApp(MainWindow):
             self.updateManualClusterList(self.clusters_tmp)
 
             # update 2d pca plot
-            self.plotDetectionResult()
-            self.plotPcaResult()
+            if self.autoPlotManualCheck.isChecked():
+                self.plotDetectionResult()
+                self.plotPcaResult()
 
-            self.updateplotWaveForms(self.clusters_tmp.copy())
-            self.statusBar().showMessage(self.tr("Undoing Spikes Waveforms..."), 2000)
-            self.wait()
-            self.statusBar().showMessage(self.tr("Undoing Raw Data Waveforms..."), 2000)
-            self.update_plotRaw(self.clusters_tmp.copy())
+                self.updateplotWaveForms(self.clusters_tmp.copy())
+                self.statusBar().showMessage(self.tr("Undoing Spikes Waveforms..."), 2000)
+                self.wait()
+                self.statusBar().showMessage(self.tr("Undoing Raw Data Waveforms..."), 2000)
+                self.update_plotRaw(self.clusters_tmp.copy())
             self.statusBar().showMessage(self.tr("Undoing Done!"), 2000)
             self.wait()
 

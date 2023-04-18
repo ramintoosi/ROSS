@@ -841,7 +841,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sortingSettingWidget.setLayout(layout_sort_settings)
 
         self.manualSettingWidget = QtWidgets.QWidget()
-        self.layout_manual_sorting = QtWidgets.QGridLayout()
+        self.layout_manual_sorting_out = QtWidgets.QVBoxLayout()
+        self.layout_manual_sorting_list = QtWidgets.QHBoxLayout()
         self.manualActWidget = QtWidgets.QListWidget()
         manual_act_list_layout = QtWidgets.QVBoxLayout()
         actLabel = QtWidgets.QLabel("Select Action : ", self)
@@ -864,7 +865,7 @@ class MainWindow(QtWidgets.QMainWindow):
         scroll_bar.setStyleSheet("background : lightgreen;")
         self.manualActWidget.setVerticalScrollBar(scroll_bar)
         manual_act_list_layout.addWidget(self.manualActWidget)
-        self.layout_manual_sorting.addLayout(manual_act_list_layout, 0, 0)
+        self.layout_manual_sorting_list.addLayout(manual_act_list_layout)
         hlayout = QtWidgets.QHBoxLayout()
         self.actManual = QtWidgets.QPushButton(text='Act')
         hlayout.addWidget(self.actManual)
@@ -876,6 +877,8 @@ class MainWindow(QtWidgets.QMainWindow):
         hlayout.addWidget(self.resetManual)
         self.saveManual = QtWidgets.QPushButton(text='Save')
         hlayout.addWidget(self.saveManual)
+        self.autoPlotManualCheck = QtWidgets.QCheckBox(text='Auto Plot')
+        hlayout.addWidget(self.autoPlotManualCheck)
 
         self.listWidget = QtWidgets.QListWidget()
         self.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
@@ -891,9 +894,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cluster_list_layout.addWidget(label)
         self.cluster_list_layout.addWidget(self.listWidget)
 
-        self.layout_manual_sorting.addLayout(self.cluster_list_layout, 0, 1)
-        self.layout_manual_sorting.addLayout(hlayout, 1, 0)
-        self.manualSettingWidget.setLayout(self.layout_manual_sorting)
+        self.layout_manual_sorting_list.addLayout(self.cluster_list_layout)
+        self.layout_manual_sorting_out.addLayout(self.layout_manual_sorting_list)
+        self.layout_manual_sorting_out.addLayout(hlayout)
+        self.manualSettingWidget.setLayout(self.layout_manual_sorting_out)
 
         self.tabs_settings.addTab(self.detectSettingWidget, "Detection")
         self.tabs_settings.addTab(self.sortingSettingWidget, "Automatic Sorting")
