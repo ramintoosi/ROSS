@@ -1,12 +1,18 @@
 name: ross
+channels:
+  - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=4.5=1_gnu
-  - ca-certificates=2021.10.26=h06a4308_2
-  - certifi=2021.10.8=py39h06a4308_2
+  - blas=1.0=mkl
+  - bottleneck=1.3.4=py39hce1f21e_0
+  - ca-certificates=2022.10.11=h06a4308_0
+  - certifi=2022.9.24=py39h06a4308_0
   - click=8.0.3=pyhd3eb1b0_0
   - dataclasses=0.8=pyh6d0b6a4_7
   - flask=2.0.2=pyhd3eb1b0_0
+  - geos=3.8.0=he6710b0_0
+  - intel-openmp=2021.4.0=h06a4308_3561
   - itsdangerous=2.0.1=pyhd3eb1b0_0
   - jinja2=3.0.2=pyhd3eb1b0_0
   - ld_impl_linux-64=2.35.1=h7274673_9
@@ -15,14 +21,25 @@ dependencies:
   - libgomp=9.3.0=h5101ec6_17
   - libstdcxx-ng=9.3.0=hd4cf53a_17
   - markupsafe=2.0.1=py39h27cfd23_0
+  - mkl=2021.4.0=h06a4308_640
+  - mkl-service=2.4.0=py39h7f8727e_0
+  - mkl_fft=1.3.1=py39hd3c417c_0
+  - mkl_random=1.2.2=py39h51133e4_0
   - ncurses=6.3=h7f8727e_2
-  - openssl=1.1.1m=h7f8727e_0
+  - numexpr=2.8.1=py39h6abb31d_0
+  - openssl=1.1.1s=h7f8727e_0
+  - packaging=21.3=pyhd3eb1b0_0
+  - pandas=1.4.2=py39h295c915_0
   - pip=21.2.4=py39h06a4308_0
   - python=3.9.7=h12debd9_1
+  - python-dateutil=2.8.2=pyhd3eb1b0_0
   - readline=8.1.2=h7f8727e_1
   - setuptools=58.0.4=py39h06a4308_0
+  - shapely=1.7.1=py39h1728cc4_0
+  - six=1.16.0=pyhd3eb1b0_1
   - sqlite=3.37.0=hc218d9a_0
   - tk=8.6.11=h1ccaba5_0
+  - toml=0.10.2=pyhd3eb1b0_0
   - tzdata=2021e=hda174b7_0
   - werkzeug=2.0.2=pyhd3eb1b0_0
   - wheel=0.37.1=pyhd3eb1b0_0
@@ -30,8 +47,10 @@ dependencies:
   - zlib=1.2.11=h7f8727e_4
   - pip:
     - aniso8601==9.0.1
+    - cffi==1.15.1
     - charset-normalizer==2.0.10
     - colour==0.1.5
+    - cryptography==39.0.0
     - cycler==0.11.0
     - flask-jwt==0.3.2
     - flask-jwt-extended==3.0.0
@@ -45,16 +64,17 @@ dependencies:
     - matplotlib==3.4.3
     - nptdms==1.4.0
     - numpy==1.22.1
-    - packaging==21.3
+    - opencv-python==4.6.0.66
     - pillow==9.0.0
+    - pycparser==2.21
     - pyjwt==1.4.2
     - pyopengl==3.1.5
+    - pyopenssl==23.0.0
     - pyparsing==3.0.6
     - pyqt5==5.15.6
     - pyqt5-qt5==5.15.2
     - pyqt5-sip==12.9.0
-    - pyqtgraph==0.10.0
-    - python-dateutil==2.8.2
+    - pyqtgraph==0.13.1
     - pytz==2021.3
     - pywavelets==1.2.0
     - pyyawt==0.1.1
@@ -62,8 +82,6 @@ dependencies:
     - scikit-learn==1.0.1
     - scipy==1.7.1
     - sip==6.5.0
-    - six==1.16.0
     - sqlalchemy==1.4.29
     - threadpoolctl==3.0.0
-    - toml==0.10.2
     - urllib3==1.26.8
