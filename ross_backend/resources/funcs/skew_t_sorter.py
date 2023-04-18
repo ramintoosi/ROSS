@@ -1,20 +1,15 @@
 import numpy as np
 import sklearn.decomposition as decomp
-from scipy import stats
-from scipy import optimize
-from scipy.spatial.distance import cdist
-from scipy.special import gamma, digamma, erf
 from resources.funcs.fcm import FCM
 from resources.funcs.sort_utils import (
     matrix_sqrt,
     dmvt_ls,
     d_mixedmvST,
-    matlab_round,
-    statistical_filter,
-    spike_alignment,
-    rt_smoother,
-    detect_peaks,
 )
+from scipy import optimize
+from scipy import stats
+from scipy.spatial.distance import cdist
+from scipy.special import gamma
 
 
 def skew_t_sorter(alignedSpikeMat, sdd, REM=np.array([]), INPCA=False):
@@ -149,13 +144,13 @@ def skew_t_sorter(alignedSpikeMat, sdd, REM=np.array([]), INPCA=False):
                                     metric='mahalanobis', VI=np.linalg.inv(Sigma[j])), 2)
                 E = (2 * np.power(nu, nu / 2) * gamma((n_feat + nu + 1) / 2) * np.power(dj + nu + np.power(A, 2),
                                                                                         -((n_feat + nu + 1) / 2))) / (
-                                gamma(nu / 2) * np.power(np.sqrt(np.pi), (n_feat + 1)) * np.sqrt(
-                            np.linalg.det(Sigma[j])) * dmvt_ls(SpikeMat, mu[j], Sigma[j], shape[j], nu))
+                            gamma(nu / 2) * np.power(np.sqrt(np.pi), (n_feat + 1)) * np.sqrt(
+                        np.linalg.det(Sigma[j])) * dmvt_ls(SpikeMat, mu[j], Sigma[j], shape[j], nu))
                 t = stats.t(n_feat + nu + 2)
                 u = ((4 * np.power(nu, nu / 2) * gamma((n_feat + nu + 2) / 2) * np.power((dj + nu),
                                                                                          (-(n_feat + nu + 2) / 2))) / (
-                                 gamma(nu / 2) * np.sqrt(np.power(np.pi, n_feat)) * np.sqrt(
-                             np.linalg.det(Sigma[j])) * dmvt_ls(SpikeMat, mu[j], Sigma[j], shape[j], nu))) * t.cdf(
+                             gamma(nu / 2) * np.sqrt(np.power(np.pi, n_feat)) * np.sqrt(
+                         np.linalg.det(Sigma[j])) * dmvt_ls(SpikeMat, mu[j], Sigma[j], shape[j], nu))) * t.cdf(
                     np.sqrt((n_feat + nu + 2) / (dj + nu)) * A)
                 d1 = dmvt_ls(SpikeMat, mu[j], Sigma[j], shape[j], nu)
                 if np.sum(d1 == 0):
@@ -189,12 +184,12 @@ def skew_t_sorter(alignedSpikeMat, sdd, REM=np.array([]), INPCA=False):
                 sum2 = np.zeros((n_feat, n_feat))
                 for i in range(n_spike):
                     sum2 = sum2 + S1[i, j] * (
-                                np.expand_dims(SpikeMat[i, :] - mu[j], axis=1) @ np.expand_dims(SpikeMat[i, :] - mu[j],
-                                                                                                axis=0)) - S2[i, j] * (
-                                       np.expand_dims(Delta[j], axis=1) @ np.expand_dims(SpikeMat[i, :] - mu[j],
-                                                                                         axis=0)) - S2[i, j] * (
-                                       np.expand_dims(SpikeMat[i, :] - mu[j], axis=1) @ np.expand_dims(Delta[j],
-                                                                                                       axis=0)) + S3[
+                            np.expand_dims(SpikeMat[i, :] - mu[j], axis=1) @ np.expand_dims(SpikeMat[i, :] - mu[j],
+                                                                                            axis=0)) - S2[i, j] * (
+                                   np.expand_dims(Delta[j], axis=1) @ np.expand_dims(SpikeMat[i, :] - mu[j],
+                                                                                     axis=0)) - S2[i, j] * (
+                                   np.expand_dims(SpikeMat[i, :] - mu[j], axis=1) @ np.expand_dims(Delta[j],
+                                                                                                   axis=0)) + S3[
                                i, j] * (np.expand_dims(Delta[j], axis=1) @ np.expand_dims(Delta[j], axis=0))
 
                 Gama[j] = sum2 / np.sum(tal[:, j])
@@ -250,4 +245,3 @@ def skew_t_sorter(alignedSpikeMat, sdd, REM=np.array([]), INPCA=False):
     print('Clusters : ', out['cluster_index'])
     print("out : ", out)
     return out['cluster_index']
-

@@ -1,13 +1,12 @@
-from flask_restful import Resource, reqparse
-import flask
-from flask import request, send_file
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.data import DetectResultModel
-import pickle
 import io
-import numpy as np
+import pickle
 
-from models.user import UserModel
+import flask
+import numpy as np
+from flask import request
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_restful import Resource, reqparse
+from models.data import DetectResultModel
 
 
 class DetectionResultDefault(Resource):

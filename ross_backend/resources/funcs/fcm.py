@@ -79,4 +79,3 @@ def FCM(data, cluster_n, options=[2, 100, 1e-5, 1]):
     #   obj_fcn[iter_n+1:max_iter] = []
 
     return center, U, obj_fcn
-

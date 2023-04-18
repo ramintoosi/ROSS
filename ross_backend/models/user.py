@@ -9,6 +9,7 @@ class UserModel(db.Model):
     password = db.Column(db.String(80))
     projects = db.relationship('ProjectModel', backref='user', uselist=False, cascade="all,delete,delete-orphan")
     project_default = db.Column(db.Integer(), nullable=True)
+
     # projects = db.relationship('ProjectModel', back_populates="user")
     # raw = db.relationship('RawModel', lazy='dynamic')
 

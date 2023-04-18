@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 
 class Raw_Dialog(QtWidgets.QDialog):
@@ -8,7 +8,7 @@ class Raw_Dialog(QtWidgets.QDialog):
         self.buttonBox = QtWidgets.QDialogButtonBox(self)
         self.buttonBox.setGeometry(QtCore.QRect(30, 160, 341, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.comboBox = QtWidgets.QComboBox(self)
         self.comboBox.setGeometry(QtCore.QRect(100, 100, 201, 22))
         self.comboBox.addItems(variables)

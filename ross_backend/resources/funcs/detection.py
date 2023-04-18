@@ -1,5 +1,5 @@
-import io
 import pickle
+
 import numpy as np
 import pyyawt
 import scipy.signal
@@ -135,4 +135,3 @@ def spike_detector(data, thr, pre_thresh, post_thresh, dead_time, side):
     SpikeTime = np.delete(SpikeTime, ind_rm, axis=0)
 
     return SpikeMat, SpikeTime
-

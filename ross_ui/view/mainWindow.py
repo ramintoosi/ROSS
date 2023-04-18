@@ -1,17 +1,19 @@
-import pyqtgraph.widgets.MultiPlotWidget
+from PyQt5 import QtCore
+import pyqtgraph as pg
+import pyqtgraph.opengl as gl
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMdiSubWindow, QMdiArea, QTabWidget, QSizePolicy
-from pyqtgraph import PlotWidget, ImageView
-import pyqtgraph.opengl as gl
-from PyQt5.QtGui import QPixmap, QPainter, QPen
+from PyQt5.QtGui import QPainter
+from PyQt5.QtWidgets import QMdiArea, QSizePolicy
+from pyqtgraph import PlotWidget
+
 from view.PCAManualWidget import PCAManualWidget
-import pyqtgraph as pg
 
 icon_path = './view/icons/'
 
 __version__ = "1.0.0"
+
 
 # -----------------------------------------------------------------------------
 #  Main window class.
@@ -238,7 +240,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.accountButton.setFlat(True)
 
         # server address act
-        self.serverAddressAct = QtWidgets.QAction(QtGui.QIcon(icon_path + 'server.png'), self.tr("&Server Address"), self)
+        self.serverAddressAct = QtWidgets.QAction(QtGui.QIcon(icon_path + 'server.png'), self.tr("&Server Address"),
+                                                  self)
         self.serverAddressAct.triggered.connect(self.open_server_dialog)
 
         # mode act
@@ -406,16 +409,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def align_subwindows(self):
 
-        self.subwindow_waveforms.setGeometry(0, 0, int(self.w_mdi * 3 / 8), int(self.h_mdi *  (2.65) / 3))
-        self.subwindow_pca_clusters.setGeometry(int(self.w_mdi * 3 / 8), 0, int(self.w_mdi * (2.35) / 8), int(self.h_mdi * (2.65) / 3))
+        self.subwindow_waveforms.setGeometry(0, 0, int(self.w_mdi * 3 / 8), int(self.h_mdi * (2.65) / 3))
+        self.subwindow_pca_clusters.setGeometry(int(self.w_mdi * 3 / 8), 0, int(self.w_mdi * (2.35) / 8),
+                                                int(self.h_mdi * (2.65) / 3))
         self.subwindow_pca_clusters.setVisible(True)
-        self.subwindow_pca_histograms.setGeometry(int(self.w_mdi * 5.35 / 8), 0, int(self.w_mdi * (2.35) / 8),int(self.h_mdi * (2.65) / 3))
+        self.subwindow_pca_histograms.setGeometry(int(self.w_mdi * 5.35 / 8), 0, int(self.w_mdi * (2.35) / 8),
+                                                  int(self.h_mdi * (2.65) / 3))
         self.subwindow_pca_histograms.setVisible(True)
 
-
-        self.subwindow_raw.setGeometry(0, int(self.h_mdi *  (2.65) / 3), int(self.w_mdi * 5 / 8), int(self.h_mdi * (1.26)/ 3))
-        self.subwindow_settings.setGeometry(int(self.w_mdi * 5 / 8), int(self.h_mdi * (2.65) / 3), int(self.w_mdi * (2.7) / 8), int(self.h_mdi * (1.26)/ 3))
-
+        self.subwindow_raw.setGeometry(0, int(self.h_mdi * (2.65) / 3), int(self.w_mdi * 5 / 8),
+                                       int(self.h_mdi * (1.26) / 3))
+        self.subwindow_settings.setGeometry(int(self.w_mdi * 5 / 8), int(self.h_mdi * (2.65) / 3),
+                                            int(self.w_mdi * (2.7) / 8), int(self.h_mdi * (1.26) / 3))
 
         self.subwindow_detect3d.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
         self.subwindow_detect3d.setVisible(False)
@@ -425,7 +430,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.subwindow_pca_manual.setVisible(False)
 
-        self.subwindow_assign.setGeometry(int(self.w_mdi / 2), int(self.h_mdi / 2), int(self.w_mdi / 4), int(self.h_mdi * 1 / 3))
+        self.subwindow_assign.setGeometry(int(self.w_mdi / 2), int(self.h_mdi / 2), int(self.w_mdi / 4),
+                                          int(self.h_mdi * 1 / 3))
         self.subwindow_assign.setVisible(False)
 
         self.mdiArea.activateNextSubWindow()

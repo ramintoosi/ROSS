@@ -7,11 +7,16 @@ class ProjectModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="CASCADE"))
-    config_detect = db.relationship('ConfigDetectionModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
-    config_sort = db.relationship('ConfigSortModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
+    config_detect = db.relationship('ConfigDetectionModel', backref='project', uselist=False,
+                                    cascade="all,delete,delete-orphan")
+    config_sort = db.relationship('ConfigSortModel', backref='project', uselist=False,
+                                  cascade="all,delete,delete-orphan")
     raw = db.relationship('RawModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
-    detection_result = db.relationship('DetectResultModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
-    sorting_result = db.relationship('SortResultModel', backref='project', uselist=False, cascade="all,delete,delete-orphan")
+    detection_result = db.relationship('DetectResultModel', backref='project', uselist=False,
+                                       cascade="all,delete,delete-orphan")
+    sorting_result = db.relationship('SortResultModel', backref='project', uselist=False,
+                                     cascade="all,delete,delete-orphan")
+
     # user = db.relationship('UserModel', backref="projects", lazy=True)
     # raw = db.relationship('RawModel', back_populates="project")
 
@@ -37,7 +42,7 @@ class ProjectModel(db.Model):
     # @classmethod
     # def get(cls):
     #     return cls.query.first()
-    
+
     @classmethod
     def get_all_by_user_id(cls, _id):
         projects = cls.query.filter_by(user_id=_id).all()
@@ -53,7 +58,7 @@ class ProjectModel(db.Model):
 
     def setId(self):
         id = db.session.query(db.func.max(self.id)).scalar()
-        self.id = id+1
+        self.id = id + 1
 
     def delete_from_db(self):
         db.session.delete(self)

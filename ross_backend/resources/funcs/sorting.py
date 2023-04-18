@@ -1,13 +1,13 @@
-from models.data import DetectResultModel
-from models.config import ConfigSortModel
 import pickle
-import io
+
 import numpy as np
-from resources.funcs.sort_utils import *
-from resources.funcs.skew_t_sorter import *
-from resources.funcs.t_sorting import *
-from resources.funcs.kmeans import *
+from models.config import ConfigSortModel
+from models.data import DetectResultModel
 from resources.funcs.gmm import *
+from resources.funcs.kmeans import *
+from resources.funcs.skew_t_sorter import *
+from resources.funcs.sort_utils import *
+from resources.funcs.t_sorting import *
 
 
 def startSorting(project_id):

@@ -1,17 +1,15 @@
-from flask_restful import Resource, reqparse
-from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.project import ProjectModel
+from flask_restful import Resource
 from models.config import ConfigDetectionModel, ConfigSortModel
 from models.data import RawModel
-import io, copy
+from models.project import ProjectModel
 
 
 class Project(Resource):
 
     @jwt_required
-    def get(self, name): # for loading project as default project  
-        user_id = get_jwt_identity() 
+    def get(self, name):  # for loading project as default project
+        user_id = get_jwt_identity()
         proj = ProjectModel.find_by_project_name(user_id, name)
         if proj:
             # copy project to default project
@@ -28,7 +26,7 @@ class Project(Resource):
             try:
                 raw_default.save_to_db()
             except:
-                return {"message": "An error occurred loading project."}, 500     
+                return {"message": "An error occurred loading project."}, 500
 
             config_detect_proj = proj.config_detect
             # ConfigDetectionModel.find_by_project_id(user_id=user_id, project_id=proj.id)
@@ -43,7 +41,7 @@ class Project(Resource):
                 config_detect_default.side_thr = config_detect_proj.side_thr
                 config_detect_default.pre_thr = config_detect_proj.pre_thr
                 config_detect_default.post_thr = config_detect_proj.post_thr
-                config_detect_default.dead_time = config_detect_proj.dead_time             
+                config_detect_default.dead_time = config_detect_proj.dead_time
             else:
                 config_detect_default = ConfigDetectionModel(user_id=user_id, project_id=0,
                                                              filter_type=config_detect_proj.filter_type,
@@ -59,9 +57,9 @@ class Project(Resource):
             try:
                 config_detect_default.save_to_db()
             except:
-                return {"message": "An error occurred loading project."}, 500  
+                return {"message": "An error occurred loading project."}, 500
 
-            config_sort_proj = proj.config_sort 
+            config_sort_proj = proj.config_sort
             config_sort_default = ConfigSortModel.find_by_user_id(user_id)
             if config_sort_default:
                 config_sort_default.filter_type = config_sort_proj.filter_type
@@ -73,7 +71,7 @@ class Project(Resource):
                 config_sort_default.side_thr = config_sort_proj.side_thr
                 config_sort_default.pre_thr = config_sort_proj.pre_thr
                 config_sort_default.post_thr = config_sort_proj.post_thr
-                config_sort_default.dead_time = config_sort_proj.dead_time             
+                config_sort_default.dead_time = config_sort_proj.dead_time
             else:
                 config_sort_default = ConfigSortModel(user_id=user_id, project_id=0,
                                                       max_shift=config_sort_proj.max_shift,
@@ -96,7 +94,7 @@ class Project(Resource):
             try:
                 config_sort_default.save_to_db()
             except:
-                return {"message": "An error occurred loading project."}, 500  
+                return {"message": "An error occurred loading project."}, 500
 
             return proj.json(), 201
 
@@ -110,7 +108,7 @@ class Project(Resource):
 
         default_project = ProjectModel.find_by_user_id(user_id)
         proj = ProjectModel(user_id, name, isDefault=False)
-        
+
         try:
             proj.save_to_db()
         except:
@@ -118,7 +116,7 @@ class Project(Resource):
         # copying default raw data
         raw_default = RawModel.find_by_project_id(user_id=user_id, project_id=0)
         if raw_default:
-            raw = RawModel(user_id = user_id, data = raw_default.data, project_id=proj.id)
+            raw = RawModel(user_id=user_id, data=raw_default.data, project_id=proj.id)
         else:
             raw = RawModel(user_id=user_id, data=None, project_id=proj.id)
         try:
@@ -153,16 +151,17 @@ class Project(Resource):
         # copying sort config
         config_sort_default = ConfigSortModel.find_by_project_id(user_id=user_id, project_id=0)
         if config_sort_default:
-            config = ConfigSortModel(user_id = user_id, project_id=proj.id, max_shift=config_sort_default.max_shift,
+            config = ConfigSortModel(user_id=user_id, project_id=proj.id, max_shift=config_sort_default.max_shift,
                                      histogram_bins=config_sort_default.histogram_bins,
                                      num_peaks=config_sort_default.num_peaks,
                                      compare_mode=config_sort_default.compare_mode, max_std=config_sort_default.max_std,
-                                     max_mean=config_sort_default.max_mean, max_outliers=config_sort_default.max_outliers,
+                                     max_mean=config_sort_default.max_mean,
+                                     max_outliers=config_sort_default.max_outliers,
                                      nu=config_sort_default.nu, PCA_num=config_sort_default.PCA_num,
                                      g_max=config_sort_default.g_max, g_min=config_sort_default.g_min,
                                      u_lim=config_sort_default.u_lim, error=config_sort_default.error,
                                      tol=config_sort_default.tol, N=config_sort_default.N,
-                                     matching_mode=config_sort_default.matching_mode,alpha=config_sort_default.alpha,
+                                     matching_mode=config_sort_default.matching_mode, alpha=config_sort_default.alpha,
                                      combination=config_sort_default.combination,
                                      custom_template=config_sort_default.custom_template,
                                      sorting_type=config_sort_default.sorting_type,
@@ -190,7 +189,7 @@ class Project(Resource):
         return {'message': 'Project does not exist.'}, 404
 
     @jwt_required
-    def put(self, name): 
+    def put(self, name):
         user_id = get_jwt_identity()
         proj = ProjectModel.find_by_project_name(user_id, name)
         if not proj:
@@ -213,7 +212,7 @@ class Project(Resource):
         # copying detection config
         config_detect_default = ConfigDetectionModel.find_by_project_id(user_id=user_id, project_id=0)
         if config_detect_default:
-            config = ConfigDetectionModel(user_id = user_id, project_id=proj.id,
+            config = ConfigDetectionModel(user_id=user_id, project_id=proj.id,
                                           filter_type=config_detect_default.filter_type,
                                           filter_order=config_detect_default.filter_order,
                                           pass_freq=config_detect_default.pass_freq,
@@ -236,8 +235,8 @@ class Project(Resource):
 
 class Projects(Resource):
     @jwt_required
-    def get(self):      
-        user_id = get_jwt_identity() 
+    def get(self):
+        user_id = get_jwt_identity()
         proj = ProjectModel.get_all_by_user_id(user_id)
         if proj:
             return proj

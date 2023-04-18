@@ -1,40 +1,37 @@
-import sys
-import traceback
-
-import sklearn
+import os
 import pickle
-from view.mainWindow import MainWindow
+import random
+import time
+import traceback
+from uuid import uuid4
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pyqtgraph
+import pyqtgraph.exporters
+import pyqtgraph.opengl as gl
+import scipy.io as sio
+import scipy.stats as stats
+import sklearn.decomposition as decom
 from PyQt5 import QtCore, QtWidgets, QtGui
-from controller.signin import SigninApp as signin_form
-from controller.serverAddress import ServerApp as server_form
-from controller.rawSelect import RawSelectApp as raw_form
+from PyQt5.QtGui import QPixmap, QTransform, QColor, QIcon
+from colour import Color
+from nptdms import TdmsFile
+from shapely.geometry import Point, Polygon
+from sklearn.neighbors import NearestNeighbors
+
 from controller.detectedMatSelect import DetectedMatSelectApp as detected_mat_form
 from controller.detectedTimeSelect import DetectedTimeSelectApp as detected_time_form
-from controller.projectSelect import projectSelectApp as project_form
-from controller.saveAs import SaveAsApp as save_as_form
 from controller.hdf5 import HDF5Plot
-from controller.multicolor_curve import MultiColoredCurve
-from controller.segmented_time import SegmentedTime
 from controller.matplot_figures import MatPlotFigures
-import os
-import scipy.io as sio
-import numpy as np
-from nptdms import TdmsFile
-import time
-import sklearn.decomposition as decom
-import pyqtgraph.opengl as gl
-import pyqtgraph
-from colour import Color
-import matplotlib.pyplot as plt
-import scipy.stats as stats
-from uuid import uuid4
-import pyqtgraph.exporters
-from ross_ui.controller.freedrawing import FreeDrawing
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QPixmap, QTransform, QColor, QIcon
-from shapely.geometry import Point, Polygon
-import random
-from sklearn.neighbors import NearestNeighbors
+from controller.multicolor_curve import MultiColoredCurve
+from controller.projectSelect import projectSelectApp as project_form
+from controller.rawSelect import RawSelectApp as raw_form
+from controller.saveAs import SaveAsApp as save_as_form
+from controller.segmented_time import SegmentedTime
+from controller.serverAddress import ServerApp as server_form
+from controller.signin import SigninApp as signin_form
+from view.mainWindow import MainWindow
 
 icon_path = './view/icons/'
 
@@ -136,7 +133,7 @@ class MainApp(MainWindow):
             # -----------------------------------------------------------------------------------------------------
 
         elif file_extension == '.csv':
-            df = pd.read_csv(filename, skiprows = 1)
+            df = pd.read_csv(filename, skiprows=1)
             temp = df.to_numpy()
             address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
             self.raw = temp
@@ -180,7 +177,6 @@ class MainApp(MainWindow):
         self.plot_clusters_pca.clear()
         self.widget_waveform.clear()
 
-
         if self.user:
             self.statusBar().showMessage(self.tr("Uploading to server..."))
             self.wait()
@@ -191,7 +187,6 @@ class MainApp(MainWindow):
                 self.wait()
             else:
                 self.wait()
-
 
     def onImportDetected(self):
         filename, filetype = QtWidgets.QFileDialog.getOpenFileName(self, self.tr("Open file"), os.getcwd(),

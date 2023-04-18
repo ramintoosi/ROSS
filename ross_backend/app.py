@@ -1,5 +1,7 @@
-from db import db
 import flask.scaffold
+
+from db import db
+
 flask.helpers._endpoint_from_view_func = flask.scaffold._endpoint_from_view_func
 from flask_restful import Api
 from blacklist import BLACKLIST
@@ -13,9 +15,8 @@ from resources.sorting_result import SortingResultDefault
 from resources.detection_result import DetectionResultDefault
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
 
-
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db' #'sqlite:///:memory:' # 'sqlite:///data.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'  # 'sqlite:///:memory:' # 'sqlite:///data.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.secret_key = 'g!\x8d3\xd8\xaa\n{A[\xff\xfe\x08\x05\xd7\x85'
@@ -77,7 +78,7 @@ def revoked_token_callback():
     return jsonify({
         "description": "The token has been revoked.",
         'error': 'token_revoked'
-    }), 401      
+    }), 401
 
 
 api.add_resource(UserRegister, '/register')

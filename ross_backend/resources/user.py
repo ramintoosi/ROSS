@@ -1,5 +1,4 @@
-from flask_restful import Resource, reqparse
-from werkzeug.security import safe_str_cmp
+from blacklist import BLACKLIST
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -8,10 +7,11 @@ from flask_jwt_extended import (
     get_raw_jwt,
     jwt_required
 )
-from models.user import UserModel
-from models.project import ProjectModel
+from flask_restful import Resource, reqparse
 from models.config import ConfigDetectionModel, ConfigSortModel
-from blacklist import BLACKLIST
+from models.project import ProjectModel
+from models.user import UserModel
+from werkzeug.security import safe_str_cmp
 
 _user_parser = reqparse.RequestParser()
 _user_parser.add_argument('username',
@@ -40,7 +40,8 @@ class UserRegister(Resource):
         proj.save_to_db()
         user.project_default = proj.id
         user.save_to_db()
-        config_detect = ConfigDetectionModel(user_id, project_id=proj.id)  # create a default detection config for the default project
+        config_detect = ConfigDetectionModel(user_id,
+                                             project_id=proj.id)  # create a default detection config for the default project
         config_detect.save_to_db()
         config_sort = ConfigSortModel(user_id, project_id=proj.id)
         config_sort.save_to_db()
@@ -50,7 +51,6 @@ class UserRegister(Resource):
 
 class UserLogin(Resource):
     def post(self):
-
         data = _user_parser.parse_args()
         user = UserModel.find_by_username(data['username'])
 
@@ -65,10 +65,10 @@ class UserLogin(Resource):
             #        }, 200
 
             return {
-                       'access_token': access_token,
-                       'refresh_token': refresh_token,
-                       'project_id' : Project_id
-                   }, 200
+                'access_token': access_token,
+                'refresh_token': refresh_token,
+                'project_id': Project_id
+            }, 200
 
         return {"message": "Invalid Credentials!"}, 401
 

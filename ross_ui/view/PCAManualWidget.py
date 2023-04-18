@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QPushButton, QVBoxLayout, QHBoxLayout
 from PyQt5.QtGui import QPixmap, QPainter, QPen
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtWidgets import QWidget
 
 
 class PCAManualWidget(QWidget):

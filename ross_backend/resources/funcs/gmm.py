@@ -1,6 +1,6 @@
 import numpy as np
-from sklearn.mixture import GaussianMixture as GMM
 from sklearn.metrics import silhouette_score
+from sklearn.mixture import GaussianMixture as GMM
 
 
 def gmm_sorter(alignedSpikeMat, ss):

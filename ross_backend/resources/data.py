@@ -1,14 +1,9 @@
-from flask_restful import Resource, reqparse
 import flask
-from flask import request, send_file
+from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_restful import Resource, reqparse
 from models.data import RawModel
 from models.project import ProjectModel
-from numpy import array, array_repr
-import numpy as np
-import io
-
-from models.user import UserModel
 
 
 class RawData(Resource):
@@ -16,8 +11,8 @@ class RawData(Resource):
     parser.add_argument('raw', type=str, required=True, help="This field cannot be left blank!")
 
     @jwt_required
-    def get(self, name):      
-        user_id = get_jwt_identity() 
+    def get(self, name):
+        user_id = get_jwt_identity()
         proj = ProjectModel.find_by_project_name(user_id, name)
         if not proj:
             return {'message': 'Project does not exist'}, 404
@@ -47,11 +42,11 @@ class RawData(Resource):
 
         if raw:
             return {'message': "Raw Data already exists."}, 400
-        filestr = request.data  
+        filestr = request.data
         # data = RawData.parser.parse_args()
 
         # print(eval(data['raw']).shape)
-        raw = RawModel(user_id=user_id, project_id=proj.id, data=filestr) #data['raw'])
+        raw = RawModel(user_id=user_id, project_id=proj.id, data=filestr)  # data['raw'])
 
         try:
             raw.save_to_db()
@@ -73,13 +68,13 @@ class RawData(Resource):
         return {'message': 'Raw Data does not exist.'}, 404
 
     @jwt_required
-    def put(self, name): 
-        user_id = get_jwt_identity() 
+    def put(self, name):
+        user_id = get_jwt_identity()
         proj = ProjectModel.find_by_project_name(user_id, name)
         if not proj:
             return {'message': 'Project does not exist'}, 404
         raw = proj.raw
-        filestr = request.data 
+        filestr = request.data
         if raw:
             print('here')
             raw.data = filestr
@@ -88,7 +83,7 @@ class RawData(Resource):
             except:
                 return {"message": "An error occurred inserting raw data."}, 500
             return "Success", 201
-        
+
         else:
             raw = RawModel(user_id, data=filestr, project_id=proj.id)
         try:
@@ -105,7 +100,7 @@ class RawDataDefault(Resource):
     parser.add_argument('raw', type=str, required=True, help="This field cannot be left blank!")
 
     @jwt_required
-    def get(self):      
+    def get(self):
         user_id = get_jwt_identity()
         # user = UserModel.find_by_id(user_id)
         project_id = request.form['project_id']
@@ -146,7 +141,7 @@ class RawDataDefault(Resource):
         return {'message': 'Raw Data does not exist.'}, 404
 
     @jwt_required
-    def put(self): 
+    def put(self):
         filestr = request.form['raw_bytes']
         user_id = get_jwt_identity()
         project_id = request.form['project_id']

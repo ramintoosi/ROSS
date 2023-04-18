@@ -1,8 +1,8 @@
 import numpy as np
-from scipy.interpolate import CubicSpline
-from scipy import signal, linalg
-from scipy.spatial.distance import cdist
 import scipy
+from scipy import signal
+from scipy.interpolate import CubicSpline
+from scipy.spatial.distance import cdist
 from scipy.special import gamma
 
 
@@ -30,10 +30,13 @@ def dmvt_ls(y, mu, Sigma, landa, nu):
     ncol = lambda x: x.shape[1]
     n = nrow(y)
     p = ncol(y)
-    mahalanobis_d = np.power(cdist(y, np.expand_dims(mu, axis=0), metric = 'mahalanobis',VI=np.linalg.inv(Sigma)), 2)
-    denst = (gamma((p + nu)/2)/(gamma(nu/2) * np.power(np.pi, p/2))) * np.power(nu, -p/2) * np.power(np.abs(np.linalg.det(Sigma)), (-1/2)) * np.power((1 + mahalanobis_d/nu), (-(p + nu)/2))
+    mahalanobis_d = np.power(cdist(y, np.expand_dims(mu, axis=0), metric='mahalanobis', VI=np.linalg.inv(Sigma)), 2)
+    denst = (gamma((p + nu) / 2) / (gamma(nu / 2) * np.power(np.pi, p / 2))) * np.power(nu, -p / 2) * np.power(
+        np.abs(np.linalg.det(Sigma)), (-1 / 2)) * np.power((1 + mahalanobis_d / nu), (-(p + nu) / 2))
     t = scipy.stats.t(nu + p)
-    dens = 2 * (denst) * t.cdf(np.sqrt((p + nu)/(mahalanobis_d + nu)) * np.expand_dims(np.sum(np.tile(np.expand_dims(np.linalg.lstsq(matrix_sqrt(Sigma).T, landa.T, rcond=None)[0], axis=0), (n, 1)) * (y - mu), axis=1), axis=1))
+    dens = 2 * (denst) * t.cdf(np.sqrt((p + nu) / (mahalanobis_d + nu)) * np.expand_dims(np.sum(
+        np.tile(np.expand_dims(np.linalg.lstsq(matrix_sqrt(Sigma).T, landa.T, rcond=None)[0], axis=0), (n, 1)) * (
+                    y - mu), axis=1), axis=1))
     return dens
 
 
@@ -47,7 +50,7 @@ def d_mixedmvST(y, pi1, mu, Sigma, landa, nu):
     g = np.size(pi1)
     dens = 0
     for j in range(g):
-        dens = dens + pi1[j] * dmvt_ls(y, mu[j], Sigma[j], landa[j], nu)   # lnda
+        dens = dens + pi1[j] * dmvt_ls(y, mu[j], Sigma[j], landa[j], nu)  # lnda
     return dens
 
 
@@ -247,7 +250,7 @@ def spike_alignment(spike_mat, spike_time, ss):
 # Rt_smoother
 def rt_smoother(y, win_length=5):
     win_alpha = 1
-    win = scipy.signal.windows.gaussian(win_length,std = win_length/win_alpha)
+    win = scipy.signal.windows.gaussian(win_length, std=win_length / win_alpha)
     win /= np.sum(win)
     conved = scipy.signal.convolve(y, win, mode='same')
     return conved
@@ -325,18 +328,18 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
     # handle NaN's
     if ind.size and indnan.size:
         # NaN's and values close to NaN's cannot be peaks
-        ind = ind[np.in1d(ind, np.unique(np.hstack((indnan, indnan-1, indnan+1))), invert=True)]
+        ind = ind[np.in1d(ind, np.unique(np.hstack((indnan, indnan - 1, indnan + 1))), invert=True)]
     # first and last values of x cannot be peaks
     if ind.size and ind[0] == 0:
         ind = ind[1:]
-    if ind.size and ind[-1] == x.size-1:
+    if ind.size and ind[-1] == x.size - 1:
         ind = ind[:-1]
     # remove peaks < minimum peak height
     if ind.size and mph is not None:
         ind = ind[x[ind] >= mph]
     # remove peaks - neighbors < threshold
     if ind.size and threshold > 0:
-        dx = np.min(np.vstack([x[ind]-x[ind-1], x[ind]-x[ind+1]]), axis=0)
+        dx = np.min(np.vstack([x[ind] - x[ind - 1], x[ind] - x[ind + 1]]), axis=0)
         ind = np.delete(ind, np.where(dx < threshold)[0])
     # detect small peaks closer than minimum peak distance
     if ind.size and mpd > 1:
@@ -346,7 +349,7 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
             if not idel[i]:
                 # keep peaks with the same height if kpsh is True
                 idel = idel | (ind >= ind[i] - mpd) & (ind <= ind[i] + mpd) \
-                    & (x[ind[i]] > x[ind] if kpsh else True)
+                       & (x[ind[i]] > x[ind] if kpsh else True)
                 idel[i] = 0  # Keep current peak
         # remove the small peaks and sort back the indices by their occurrence
         ind = np.sort(ind[~idel])

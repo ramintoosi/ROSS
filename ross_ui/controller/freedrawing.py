@@ -1,7 +1,6 @@
-import sys
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtGui import QPixmap, QPainter, QPen
+from PyQt5.QtWidgets import QMainWindow
 
 
 class FreeDrawing(QMainWindow):
@@ -36,7 +35,6 @@ class FreeDrawing(QMainWindow):
     def mouseReleaseEvent(self, event):
         if event.button == Qt.LeftButton:
             self.drawing = False
-
 
 # if __name__ == '__main__':
 #     app = QApplication(sys.argv)

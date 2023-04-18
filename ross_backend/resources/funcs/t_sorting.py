@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.linalg
 import sklearn.decomposition as decomp
-from scipy.special import gamma
 from resources.funcs.fcm import FCM
+from scipy.special import gamma
 
 
 def t_dist_sorter(alignedSpikeMat, sdd):

@@ -1,6 +1,3 @@
-import pickle
-import scipy.io as sio
-
 # # read .mat file and spark values
 # data = sio.loadmat("/home/zahra/Documents/avir_projects/ROSS_v1/Dataset/DATA.mat")
 # print(".mat file keys are : \n", data.keys())
@@ -30,10 +27,11 @@ import scipy.io as sio
 # print(os.path.join(data_path, os.path.split(filename)[-1][:-4]+'.pkl'))
 
 import pickle
-with open("/home/zahra/Documents/avir_projects/ROSS_v1/ross_data/Sort_Result/0217b523-194f-49d4-aca6-a11c91dce562.pkl", 'rb') as f:
+
+with open("/home/zahra/Documents/avir_projects/ROSS_v1/ross_data/Sort_Result/0217b523-194f-49d4-aca6-a11c91dce562.pkl",
+          'rb') as f:
     x = pickle.load(f)
     print("saved pickle data is : -----------", x.data)
-
 
 # with open("/home/zahra/Documents/avir_projects/ROSS_v1/ross_backend/data_set/Detection_Result/cc607bdb-a454-489c-87f9-4559469d3780.pkl", 'rb') as f:
 #     y = pickle.load(f)

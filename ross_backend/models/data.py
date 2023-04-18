@@ -1,4 +1,6 @@
 from db import db
+
+
 # from sqlalchemy.dialects import postgresql
 
 
@@ -9,6 +11,7 @@ class RawModel(db.Model):
     data = db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"))
+
     # user = db.relationship('UserModel')
     # project = db.relationship('ProjectModel', backref="raw", lazy=True)
 
@@ -28,7 +31,7 @@ class RawModel(db.Model):
     @classmethod
     def get(cls):
         return cls.query.first()
-    
+
     @classmethod
     def find_by_user_id(cls, _id):
         return cls.query.filter_by(user_id=_id, project_id=0).first()
@@ -49,6 +52,7 @@ class DetectResultModel(db.Model):
     data = db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"))
+
     # user = db.relationship('UserModel')
     # project = db.relationship('ProjectModel', backref="raw", lazy=True)
 
@@ -88,6 +92,7 @@ class SortResultModel(db.Model):
     data = db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"))
+
     # user = db.relationship('UserModel')
     # project = db.relationship('ProjectModel', backref="raw", lazy=True)
 
@@ -119,4 +124,3 @@ class SortResultModel(db.Model):
     def delete_from_db(self):
         db.session.delete(self)
         db.session.commit()
-

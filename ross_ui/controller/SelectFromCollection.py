@@ -1,6 +1,6 @@
 import numpy as np
-from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
+from matplotlib.widgets import LassoSelector
 
 
 class SelectFromCollection:

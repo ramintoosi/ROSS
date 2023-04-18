@@ -1,15 +1,15 @@
-import os.path
-
-from flask_restful import Resource, reqparse
-import flask
-from flask import request, send_file
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.data import SortResultModel
-import pickle
 import io
-import numpy as np
-from models.user import UserModel
+import os.path
+import pickle
 from uuid import uuid4
+
+import flask
+import numpy as np
+from flask import request
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_restful import Resource, reqparse
+from models.data import SortResultModel
+
 
 class SortingResultDefault(Resource):
     parser = reqparse.RequestParser()
@@ -48,7 +48,7 @@ class SortingResultDefault(Resource):
         # data = RawData.parser.parse_args()
 
         # print(eval(data['raw']).shape)
-        data = SortResultModel(user_id=user_id, data=filestr,project_id=project_id)  # data['raw'])
+        data = SortResultModel(user_id=user_id, data=filestr, project_id=project_id)  # data['raw'])
 
         try:
             data.save_to_db()

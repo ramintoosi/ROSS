@@ -1,6 +1,8 @@
-from view.signin import Signin_Dialog
-from model.api import UserAccount
 from PyQt5 import QtWidgets
+
+from model.api import UserAccount
+from view.signin import Signin_Dialog
+
 
 class SigninApp(Signin_Dialog):
     def __init__(self, server):
@@ -18,7 +20,6 @@ class SigninApp(Signin_Dialog):
         else:
             QtWidgets.QMessageBox.critical(self, "Error", res["message"])
 
-
     def accept_up(self):
         username = self.textEdit_username.text()
         password = self.textEdit_password.text()
@@ -29,5 +30,5 @@ class SigninApp(Signin_Dialog):
             QtWidgets.QMessageBox.information(self, "Account Created", res["message"])
         else:
             self.label_res.setStyleSheet("color: red")
-        # self.label_res.setText(res['message'])
+            # self.label_res.setText(res['message'])
             QtWidgets.QMessageBox.critical(self, "Error", res["message"])

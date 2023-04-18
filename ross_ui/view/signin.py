@@ -1,4 +1,5 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
+
 
 class Signin_Dialog(QtWidgets.QDialog):
     def __init__(self, server):
@@ -26,12 +27,9 @@ class Signin_Dialog(QtWidgets.QDialog):
         self.pushButton_up = QtWidgets.QPushButton(self)
         self.pushButton_up.setGeometry(QtCore.QRect(260, 220, 111, 31))
 
-
         self.setWindowTitle("Sign In/Up")
         self.label.setText("Username")
         self.label_2.setText("Password")
         self.label_res.setText("")
         self.pushButton_in.setText("Sign In")
         self.pushButton_up.setText("Sign Up")
-
-

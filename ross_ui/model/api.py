@@ -1,9 +1,7 @@
-import pickle
-
-import requests
 import io
+
 import numpy as np
-from uuid import uuid4
+import requests
 
 
 class UserAccount():
@@ -352,7 +350,6 @@ class UserAccount():
                 response = requests.put(self.url + '/sort', headers={'Authorization': 'Bearer ' + self.access_token},
                                         json=data)
                 if response.ok:
-
                     return {'stat': True, 'message': 'success', 'clusters': response.json()["clusters"]}
             return {'stat': False, 'message': response.json()["message"]}
         return {'stat': False, 'message': 'Not Logged In!'}

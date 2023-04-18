@@ -19,8 +19,8 @@ class PlotCurve(PlotCurveItem):
             xstart = 0
             xend = 400
         else:
-            xstart = int(vb.viewRange()[0][0])+1
-            xend = int(vb.viewRange()[0][1])+1
+            xstart = int(vb.viewRange()[0][0]) + 1
+            xend = int(vb.viewRange()[0][1]) + 1
 
         if self.curve.end <= xend and self.curve.start >= xstart:
             print('here 1')
@@ -56,5 +56,3 @@ class PlotCurve(PlotCurveItem):
 
         else:
             pass
-
-

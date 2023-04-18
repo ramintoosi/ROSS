@@ -23,17 +23,3 @@ class MultiColoredCurve:
                 start = int(seg.start)
                 end = int(seg.end)
                 self.curves[str(num_of_clusters)][start: end] = self.data[start: end].copy()
-
-
-
-
-
-
-
-
-
-
-
-
-
-

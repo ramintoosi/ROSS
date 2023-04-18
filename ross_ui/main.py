@@ -1,6 +1,8 @@
-from controller.mainWindow import MainApp
-from PyQt5 import QtWidgets
 import sys
+
+from PyQt5 import QtWidgets
+
+from controller.mainWindow import MainApp
 
 
 def main():
@@ -17,4 +19,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-

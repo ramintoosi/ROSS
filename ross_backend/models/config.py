@@ -19,10 +19,12 @@ class ConfigDetectionModel(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"))
+
     # project = db.relationship('ProjectModel', backref="config_detect")
     # user = db.relationship('UserModel', back_populates="config_detect")
 
-    def __init__(self, user_id, filter_type="butter", filter_order=4, pass_freq=300, stop_freq=3000, sampling_rate=40000,
+    def __init__(self, user_id, filter_type="butter", filter_order=4, pass_freq=300, stop_freq=3000,
+                 sampling_rate=40000,
                  thr_method="median", side_thr="negative", pre_thr=40, post_thr=59, dead_time=20, run_detection=False,
                  project_id=0):
         self.user_id = user_id
@@ -108,9 +110,8 @@ class ConfigSortModel(db.Model):
 
     def __init__(self, user_id, max_shift=10, histogram_bins=75, num_peaks=3, compare_mode='index', max_std=3,
                  max_mean=1, max_outliers=5, nu=20, PCA_num=15, g_max=9, g_min=1, u_lim=0.01, error=0.1, tol=0.01, N=15,
-                 matching_mode='Euclidean',alpha=0.01, combination=False, custom_template=False, sorting_type='t dist',
+                 matching_mode='Euclidean', alpha=0.01, combination=False, custom_template=False, sorting_type='t dist',
                  max_iter=500, run_sorting=False, project_id=0, alignment=True, filtering=True):
-
         self.project_id = project_id
         self.user_id = user_id
 
@@ -149,7 +150,7 @@ class ConfigSortModel(db.Model):
     def json(self):
         return {'max_shift': self.max_shift, 'histogram_bins': self.histogram_bins, 'num_peaks': self.num_peaks,
                 'compare_mode': self.compare_mode, 'max_std': self.max_std, 'max_mean': self.max_mean,
-                'max_outliers': self.max_outliers, 'nu': self.nu, 'PCA_num': self.PCA_num, 'g_max':self.g_max,
+                'max_outliers': self.max_outliers, 'nu': self.nu, 'PCA_num': self.PCA_num, 'g_max': self.g_max,
                 'g_min': self.g_min, 'u_lim': self.u_lim, 'error': self.error, 'tol': self.tol, 'N': self.N,
                 'matching_mode': self.matching_mode, 'alpha': self.alpha, 'combination': self.combination,
                 'custom_templates': self.custom_template, 'sorting_type': self.sorting_type, 'max_iter': self.max_iter,
@@ -169,7 +170,7 @@ class ConfigSortModel(db.Model):
     #     return cls.query.filter_by(user_id=_id, project_id=0).first()
 
     @classmethod
-    def find_by_project_id(cls,project_id):
+    def find_by_project_id(cls, project_id):
         return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):

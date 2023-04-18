@@ -1,13 +1,14 @@
-from flask_restful import Resource, reqparse, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models.config import ConfigSortModel
-from models.project import ProjectModel
-from models.data import SortResultModel
-from resources.funcs.sorting import startSorting, startReSorting
-import traceback
-from models.user import UserModel
-from uuid import uuid4
 import pickle
+import traceback
+from uuid import uuid4
+
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_restful import Resource, reqparse, request
+from models.config import ConfigSortModel
+from models.data import SortResultModel
+from models.project import ProjectModel
+from models.user import UserModel
+from resources.funcs.sorting import startSorting, startReSorting
 
 
 class Sort(Resource):
