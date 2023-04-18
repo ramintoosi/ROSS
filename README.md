@@ -10,27 +10,26 @@ ROSS v2 is implemented based on the client-server architecture. In the beta vers
 - All the requirement packages are listed at enviroments.yml file in root path
 
 ## How to install
-1- Git Clone this repository to your local path.
-
-2- Create a conda enviroment by command : ```conda env create -f enviroment.yml```
+1. Git Clone this repository to your local path ```git clone https://github.com/ramintoosi/ROSS```
+2. Checkout to v2 ```git checkout v2``` 
+3. Create a conda enviroment by command : ```conda env create -f environment.yml```
+4. Activate conda environment ```conda activate ross```
 
 ## How to run
 
-1- Run the backend by typing  ```python ./ross_backend/app.py``` in the terminal.
+1. Run the backend by typing  ```python ./ross_backend/app.py``` in the terminal.
+2. Run the UI by typing  ```python ./ross_ui/main.py``` in the terminal.
+3. The first time you want to use the software, you must define a user as follows:
 
-2- Run the UI by typing  ```python ./ross_ui/main.py``` in the terminal.
+  - In opened window, click on ```Options``` ---> ```Sign In/Up``` , enter the desired username and password, click on ```Sign Up```.
 
-3- The first time you want to use the software, you must define a user as follows:
+4. The next time you want to use the software, just click on ```Options``` ---> ```Sign In/Up``` and enter your username and password, click on ```Sign In``` .
 
-In opened window, click on ```Options``` ---> ```Sign In/Up``` , enter the desired username and password, click on ```Sign Up```.
+5. Import your "Raw Data" as follows : 
 
-4- The next time you want to use the software, just click on ```Options``` ---> ```Sign In/Up``` and enter your username and password, click on ```Sign In``` .
+  - In opened window, click on ```File``` ---> ```Import``` ---> ```Raw Data``` , select the data file from your system, then, select the variable containing raw-data ```(Spike)``` and click on ```OK```.
 
-5- Import your "Raw Data" as follows : 
-
-In opened window, click on ```File``` ---> ```Import``` ---> ```Raw Data``` , select the data file from your system, then, select the variable containing raw-data ```(LFP/Spike)``` and click on ```OK```.
-
-6- Now you can Go on and enjoy the Software. 
+6. Now you can Go on and enjoy the Software. 
 
 For more instructions and samples please visit ROSS documentation at (link), or demo video at (link).
 ## Usage
@@ -40,26 +39,31 @@ ROSS v2, same as v1, provides useful tools for spike detection, automatic and ma
 - Detection
 
   You can load raw extracellular data and adjust the provided settings for filtering and thresholding. Then by pushing **Start Detection** button the detection results appear in a PCA plot:
+  
   ![image](./images/detection.png)
 
 
 - Automatic Sorting
 
   Automatic sorting is implemented based on five different methods: skew-t and t distributions, GMM, k-means and template matching. Several options are provided for configurations in the algorithm. Automatic sorting results will appear in PCA and waveform plots:
+  
  ![image](./images/sort.png)
 
 - Manual Sorting
 
   Manual sorting tool is used for manual modifications on automatic results by the researcher. These tools include: Merge, Delete, Resort and Manual grouping or deleting samples in PCA domain:
+  
   ![image](./images/sort2.png)
 
 
 - Visualization
   
   - Several visualization tools are provided such as: 3D plot
+  
   ![image](./images/vis1.png)
   
    - Also, inter spike interval, neuron live time and Cluster Waveforms
+   
   ![image](./images/vis2.png)
 
   
