@@ -7,13 +7,14 @@ from flask_restful import Api
 from blacklist import BLACKLIST
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
-from resources.sort import SortDefault, Sort
-from resources.project import Project, Projects
-from resources.data import RawData, RawDataDefault
-from resources.detect import Detect, DetectDefault
+from resources.sort import SortDefault
+from resources.project import Projects
+from resources.data import RawDataDefault
+from resources.detect import DetectDefault
 from resources.sorting_result import SortingResultDefault
 from resources.detection_result import DetectionResultDefault
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
+from resources.browse import Browse
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'  # 'sqlite:///:memory:' # 'sqlite:///data.db'
@@ -100,6 +101,8 @@ api.add_resource(SortingResultDefault, '/sorting_result')
 api.add_resource(Projects, '/projects')
 # api.add_resource(Project, '/project/<string:name>')
 
+api.add_resource(Browse, '/browse')
+
 if __name__ == '__main__':
     db.init_app(app)
-    app.run(port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
