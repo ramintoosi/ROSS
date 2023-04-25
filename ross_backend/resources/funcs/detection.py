@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import pyyawt
 import scipy.signal
+
 from models.config import ConfigDetectionModel
 from models.data import RawModel
 

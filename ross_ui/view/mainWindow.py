@@ -1,4 +1,3 @@
-from PyQt5 import QtCore
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 from PyQt5 import QtCore
@@ -12,7 +11,7 @@ from view.PCAManualWidget import PCAManualWidget
 
 icon_path = './view/icons/'
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 
 
 # -----------------------------------------------------------------------------
@@ -90,6 +89,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.importRawAct.setStatusTip(self.tr("Import Raw Data"))
         self.importRawAct.setIcon(QtGui.QIcon(icon_path + "Import.png"))
         self.importRawAct.triggered.connect(self.onImportRaw)
+
+        self.importRawActServer = QtWidgets.QAction(self.tr("&Raw Data From Server"), self)
+        self.importRawActServer.setStatusTip(self.tr("Import Raw Data From Server"))
+        self.importRawActServer.setIcon(QtGui.QIcon(icon_path + "Import.png"))
+        self.importRawActServer.triggered.connect(self.open_file_dialog_server)
 
         self.importDetectedAct = QtWidgets.QAction(self.tr("&Detection Result"), self)
         self.importDetectedAct.setStatusTip(self.tr("Import Detection Result"))
@@ -342,7 +346,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fileMenu.addAction(self.saveAsAct)
         self.fileMenu.addSeparator()
         self.importMenu = self.fileMenu.addMenu(self.tr("&Import"))
-        self.importMenu.addActions((self.importRawAct, self.importDetectedAct, self.importSortedAct))
+        self.importMenu.addActions(
+            (self.importRawAct, self.importRawActServer, self.importDetectedAct, self.importSortedAct))
         self.exportMenu = self.fileMenu.addMenu(self.tr("&Export"))
         self.exportMenu.addActions((self.exportRawAct, self.exportDetectedAct, self.exportSortedAct))
 

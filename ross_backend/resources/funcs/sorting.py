@@ -1,6 +1,5 @@
 import pickle
 
-import numpy as np
 from models.config import ConfigSortModel
 from models.data import DetectResultModel
 from resources.funcs.gmm import *

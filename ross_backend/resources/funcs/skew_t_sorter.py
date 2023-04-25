@@ -1,15 +1,16 @@
 import numpy as np
 import sklearn.decomposition as decomp
+from scipy import optimize
+from scipy import stats
+from scipy.spatial.distance import cdist
+from scipy.special import gamma
+
 from resources.funcs.fcm import FCM
 from resources.funcs.sort_utils import (
     matrix_sqrt,
     dmvt_ls,
     d_mixedmvST,
 )
-from scipy import optimize
-from scipy import stats
-from scipy.spatial.distance import cdist
-from scipy.special import gamma
 
 
 def skew_t_sorter(alignedSpikeMat, sdd, REM=np.array([]), INPCA=False):

@@ -1,5 +1,6 @@
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource
+
 from models.config import ConfigDetectionModel, ConfigSortModel
 from models.data import RawModel
 from models.project import ProjectModel

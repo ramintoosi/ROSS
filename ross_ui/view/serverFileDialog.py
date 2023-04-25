@@ -1,35 +1,33 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 
 
-class Signin_Dialog(QtWidgets.QDialog):
-    def __init__(self, server):
+class ServerFileDialog(QtWidgets.QDialog):
+    def __init__(self):
         super().__init__()
-        self.url = server
-        self.setFixedSize(400, 300)
-        self.label = QtWidgets.QLabel(self)
-        self.label.setGeometry(QtCore.QRect(40, 60, 121, 21))
-        self.label_2 = QtWidgets.QLabel(self)
-        self.label_2.setGeometry(QtCore.QRect(50, 130, 121, 20))
+        self.setFixedSize(600, 300)
 
-        self.textEdit_username = QtWidgets.QLineEdit(self)
-        self.textEdit_username.setGeometry(QtCore.QRect(145, 55, 141, 31))
+        self.layout_out = QtWidgets.QVBoxLayout()
+        self.layout_file_but = QtWidgets.QHBoxLayout()
 
-        self.textEdit_password = QtWidgets.QLineEdit(self)
-        self.textEdit_password.setGeometry(QtCore.QRect(145, 125, 141, 31))
-        self.textEdit_password.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.line_address = QtWidgets.QLineEdit()
+        self.line_address.setEnabled(False)
+        self.layout_out.addWidget(self.line_address)
 
-        self.label_res = QtWidgets.QLabel(self)
-        self.label_res.setGeometry(QtCore.QRect(50, 180, 361, 16))
+        self.list_folder = QtWidgets.QListWidget()
+        self.layout_out.addWidget(self.list_folder)
 
-        self.pushButton_in = QtWidgets.QPushButton(self)
-        self.pushButton_in.setGeometry(QtCore.QRect(130, 220, 121, 31))
+        self.layout_out.addWidget(QtWidgets.QLabel('For mat files enter the variable name (if more than one variable '
+                                                   'is stored).'))
 
-        self.pushButton_up = QtWidgets.QPushButton(self)
-        self.pushButton_up.setGeometry(QtCore.QRect(260, 220, 111, 31))
+        self.line_varname = QtWidgets.QLineEdit()
+        self.layout_out.addWidget(self.line_varname)
 
-        self.setWindowTitle("Sign In/Up")
-        self.label.setText("Username")
-        self.label_2.setText("Password")
-        self.label_res.setText("")
-        self.pushButton_in.setText("Sign In")
-        self.pushButton_up.setText("Sign Up")
+        self.push_open = QtWidgets.QPushButton('Open')
+        self.push_cancel = QtWidgets.QPushButton('Cancel')
+        self.layout_file_but.addWidget(self.push_open)
+        self.layout_file_but.addWidget(self.push_cancel)
+        self.layout_out.addLayout(self.layout_file_but)
+
+        self.setLayout(self.layout_out)
+
+        self.setWindowTitle("Server File Dialog")

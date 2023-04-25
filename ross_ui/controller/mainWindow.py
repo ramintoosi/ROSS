@@ -1,14 +1,15 @@
+import enum
 import os
+import pathlib
 import pickle
 import random
 import time
 import traceback
 from uuid import uuid4
-import enum
-import pathlib
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pyqtgraph
 import pyqtgraph.exporters
 import pyqtgraph.opengl as gl
@@ -21,7 +22,6 @@ from colour import Color
 from nptdms import TdmsFile
 from shapely.geometry import Point, Polygon
 from sklearn.neighbors import NearestNeighbors
-import pandas as pd
 
 from controller.detectedMatSelect import DetectedMatSelectApp as detected_mat_form
 from controller.detectedTimeSelect import DetectedTimeSelectApp as detected_time_form
@@ -33,6 +33,7 @@ from controller.rawSelect import RawSelectApp as raw_form
 from controller.saveAs import SaveAsApp as save_as_form
 from controller.segmented_time import SegmentedTime
 from controller.serverAddress import ServerApp as server_form
+from controller.serverFileDialog import ServerFileDialogApp as sever_dialog
 from controller.signin import SigninApp as signin_form
 from view.mainWindow import MainWindow
 
@@ -308,6 +309,12 @@ class MainApp(MainWindow):
             self.statusBar().showMessage(self.tr("Loaded."), 2500)
             self.saveAct.setEnabled(True)
 
+    @QtCore.pyqtSlot()
+    def open_file_dialog_server(self):
+        dialog = sever_dialog(self.user)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            pass
+
     def open_server_dialog(self):
         dialog = server_form(server_text=self.url)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
@@ -467,6 +474,7 @@ class MainApp(MainWindow):
 
     def plotRaw(self):
         curve = HDF5Plot()
+        curve.setAPI(self.user)
         curve.setHDF5(self.raw)
         self.widget_raw.clear()
         self.widget_raw.addItem(curve)
@@ -1389,12 +1397,13 @@ class MainApp(MainWindow):
 
         res = self.user.get_raw_data()
         if res['stat']:
-            with open(res['raw'], 'rb') as f:
-                new_data = pickle.load(f)
+            if 'raw' in res:
+                with open(res['raw'], 'rb') as f:
+                    new_data = pickle.load(f)
 
-            self.raw = new_data
-            self.statusBar().showMessage(self.tr("Plotting..."), 2500)
-            self.wait()
+                self.raw = new_data
+                self.statusBar().showMessage(self.tr("Plotting..."), 2500)
+                self.wait()
             flag_raw = True
 
         res = self.user.get_detection_result()

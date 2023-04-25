@@ -4,7 +4,7 @@ import numpy as np
 import requests
 
 
-class UserAccount():
+class API():
     def __init__(self, url):
         self.url = url
         self.refresh_token = None
@@ -21,6 +21,9 @@ class UserAccount():
 
         if response.ok:
             self.access_token = response.json()["access_token"]
+            return True
+        else:
+            return False
 
     def sign_up(self, username, password):
         data = {"username": username, "password": password}
@@ -56,104 +59,65 @@ class UserAccount():
         else:
             return {'stat': False, 'message': response.json()["message"]}
 
-    def post_raw_data(self, raw_data):
-        if not (self.access_token is None):
+    def post_raw_data(self, raw_data_path, mode=0, varname=''):
+        if self.access_token is not None:
+
             # buffer = io.BytesIO()
             # np.savez_compressed(buffer, raw=raw_data)
             # buffer.seek(0)
             # raw_bytes = buffer.read()
             # buffer.close()
 
-            response = requests.put(self.url + '/raw', headers={'Authorization': 'Bearer ' + self.access_token},
-                                    data={"raw_bytes": raw_data, "project_id": self.project_id})
+            response = requests.post(self.url + '/raw', headers={'Authorization': 'Bearer ' + self.access_token},
+                                     json={"raw_data": raw_data_path,
+                                           "project_id": self.project_id,
+                                           "mode": mode,
+                                           "varname": varname})
 
             if response.ok:
                 return {'stat': True, 'message': 'success'}
             elif response.json()["message"] == 'The token has expired.':
                 self.refresh_jwt_token()
-                response = requests.put(self.url + '/raw', headers={'Authorization': 'Bearer ' + self.access_token},
-                                        data={"raw_bytes": raw_data, "project_id": self.project_id})
+                response = requests.post(self.url + '/raw', headers={'Authorization': 'Bearer ' + self.access_token},
+                                         json={"raw_data": raw_data_path,
+                                               "project_id": self.project_id,
+                                               "mode": mode,
+                                               "varname": varname})
                 if response.ok:
                     return {'stat': True, 'message': 'success'}
             return {'stat': False, 'message': response.json()["message"]}
         return {'stat': False, 'message': 'Not Logged In!'}
 
-    # def post_detected_data(self, spike_mat, spike_time):
-    #     if not (self.access_token is None):
-    #         buffer = io.BytesIO()
-    #         np.savez_compressed(buffer, spike_mat=spike_mat, spike_time=spike_time)
-    #         buffer.seek(0)
-    #         detected_bytes = buffer.read()
-    #         buffer.close()
-    #         response = requests.put(self.url + '/detect', headers={'Authorization': 'Bearer ' + self.access_token},
-    #                                 data={"raw_bytes": detected_bytes, "project_id": self.project_id})
-    #
-    #         if response.ok:
-    #             return {'stat': True, 'message': 'success'}
-    #         elif response.json()["message"] == 'The token has expired.':
-    #             self.refresh_jwt_token()
-    #             response = requests.put(self.url + '/detect', headers={'Authorization': 'Bearer ' + self.access_token},
-    #                                     data=detected_bytes)
-    #             if response.ok:
-    #                 return {'stat': True, 'message': 'success'}
-    #         return {'stat': False, 'message': response.json()["message"]}
-    #     return {'stat': False, 'message': 'Not Logged In!'}
-
-    # def post_sorting_data(self, clusters):
-    #     pass
-
-    # def load_project(self, project_name):
-    #     if not (self.access_token is None):
-    #         response = requests.get(self.url + '/project/' + project_name,
-    #                                 headers={'Authorization': 'Bearer ' + self.access_token})
-    #         if response.ok:
-    #             return {'stat': True}
-    #         elif response.json()["message"] == 'The token has expired.':
-    #             self.refresh_jwt_token()
-    #             response = requests.get(self.url + '/project/' + project_name,
-    #                                     headers={'Authorization': 'Bearer ' + self.access_token})
-    #             if response.ok:
-    #                 return {'stat': True}
-    #         return {'stat': False, 'message': response.json()["message"]}
-    #     return {'stat': False, 'message': 'Not Logged In!'}
-
-    # def get_projects(self):
-    #     if not (self.access_token == None):
-    #         response = requests.get(self.url + '/projects', headers={'Authorization': 'Bearer ' + self.access_token})
-    #         if response.ok:
-    #             return {'stat': True, 'projects': response.json()['projects']}
-    #         elif response.json()["message"] == 'The token has expired.':
-    #             self.refresh_jwt_token()
-    #             response = requests.get(self.url + '/projects',
-    #                                     headers={'Authorization': 'Bearer ' + self.access_token})
-    #             if response.ok:
-    #                 return {'stat': True, 'projects': response.json()["projects"]}
-    #         return {'stat': False, 'message': response.json()["message"]}
-    #     return {'stat': False, 'message': 'Not Logged In!'}
-
-    def get_raw_data(self):
+    def get_raw_data(self, start=None, stop=None, limit=None):
         if not (self.access_token is None):
             response = requests.get(self.url + '/raw',
                                     headers={'Authorization': 'Bearer ' + self.access_token},
-                                    data={'project_id': self.project_id})
+                                    json={'project_id': self.project_id,
+                                          'start': start,
+                                          'stop': stop,
+                                          'limit': limit})
+
             if response.ok:
-                # b = io.BytesIO()
-                # b.write(response.content)
-                # b.seek(0)
-                # d = np.load(b, allow_pickle=True)
-                return {'stat': True, 'raw': response.content}
+                if response.status_code == 210:
+                    return {'stat': True, 'raw': response.content}
+                elif response.status_code == 211:
+                    iob = io.BytesIO()
+                    iob.write(response.content)
+                    iob.seek(0)
+                    raw_data = np.load(iob, allow_pickle=True)
+                    return {'stat': True,
+                            'visible': raw_data['visible'].flatten(),
+                            'stop': raw_data['stop'].flatten(),
+                            'ds': raw_data['ds'].flatten()}
+                elif response.status_code == 212:
+                    return {'stat': True, 'message': 'SERVER MODE'}
+                else:
+                    return {'stat': False, 'message': 'Status code not supported!'}
 
             elif response.status_code == 401:
-                self.refresh_jwt_token()
-                response = requests.get(self.url + '/raw',
-                                        headers={'Authorization': 'Bearer ' + self.access_token},
-                                        data={'project_id': self.project_id})
-                if response.ok:
-                    b = io.BytesIO()
-                    b.write(response.content)
-                    b.seek(0)
-                    d = np.load(b, allow_pickle=True)
-                    return {'stat': True, 'raw': d['raw'].flatten()}
+                ret = self.refresh_jwt_token()
+                if ret:
+                    self.get_raw_data(start, stop, limit)
             return {'stat': False, 'message': response.json()['message']}
         return {'stat': False, 'message': 'Not Logged In!'}
 
@@ -379,3 +343,20 @@ class UserAccount():
                     return {'stat': True, 'message': 'success'}
             return {'stat': False, 'message': response.json()["message"]}
         return {'stat': False, 'message': 'Not Logged In!'}
+
+    def browse(self, root: str):
+        if root is None:
+            response = requests.get(self.url + '/browse', headers={'Authorization': 'Bearer ' + self.access_token})
+        else:
+            response = requests.get(self.url + '/browse', headers={'Authorization': 'Bearer ' + self.access_token},
+                                    json={'root': root})
+        if response.ok:
+            return response.json()
+        else:
+            return None
+
+    def browse_send_filename(self, filename, varname):
+        response = requests.get(self.url + '/browse', headers={'Authorization': 'Bearer ' + self.access_token},
+                                json={'filename': filename, 'varname': varname, 'project_id': self.project_id})
+        if response.ok:
+            return response

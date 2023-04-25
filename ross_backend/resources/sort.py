@@ -1,14 +1,14 @@
 import pickle
 import traceback
-from uuid import uuid4
 from pathlib import Path
+from uuid import uuid4
 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource, reqparse, request
+
 from models.config import ConfigSortModel
 from models.data import SortResultModel, RawModel
 from models.project import ProjectModel
-from models.user import UserModel
 from resources.funcs.sorting import startSorting, startReSorting
 
 
@@ -174,7 +174,6 @@ class SortDefault(Resource):
     def get(self):
         user_id = get_jwt_identity()
         project_id = request.form['project_id']
-        user = UserModel.find_by_id(user_id)
         config = ConfigSortModel.find_by_project_id(project_id)
         if config:
             return config.json()

@@ -36,7 +36,7 @@ def dmvt_ls(y, mu, Sigma, landa, nu):
     t = scipy.stats.t(nu + p)
     dens = 2 * (denst) * t.cdf(np.sqrt((p + nu) / (mahalanobis_d + nu)) * np.expand_dims(np.sum(
         np.tile(np.expand_dims(np.linalg.lstsq(matrix_sqrt(Sigma).T, landa.T, rcond=None)[0], axis=0), (n, 1)) * (
-                    y - mu), axis=1), axis=1))
+                y - mu), axis=1), axis=1))
     return dens
 
 

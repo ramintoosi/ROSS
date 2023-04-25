@@ -1,34 +1,53 @@
+import os
+
 from PyQt5 import QtWidgets
 
-from model.api import UserAccount
-from view.signin import Signin_Dialog
+from model.api import API
+from view.serverFileDialog import ServerFileDialog
 
 
-class SigninApp(Signin_Dialog):
-    def __init__(self, server):
-        super(SigninApp, self).__init__(server)
-        self.pushButton_in.pressed.connect(self.accept_in)
-        self.pushButton_up.pressed.connect(self.accept_up)
+class ServerFileDialogApp(ServerFileDialog):
+    def __init__(self, api: API):
+        super(ServerFileDialogApp, self).__init__()
+        self.api = api
+        self.root = None
 
-    def accept_in(self):
-        username = self.textEdit_username.text()
-        password = self.textEdit_password.text()
-        self.user = UserAccount(self.url)
-        res = self.user.sign_in(username, password)
-        if res['stat']:
-            super().accept()
+        self.list_folder.itemDoubleClicked.connect(self.itemDoubleClicked)
+
+        self.request_dir()
+
+    def request_dir(self):
+        self.list_folder.clear()
+        dir_dict = self.api.browse(self.root)
+        if dir_dict is not None:
+            self.line_address.setText(dir_dict['root'])
+
+            item = QtWidgets.QListWidgetItem('..')
+            item.setIcon(QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.SP_DirIcon))
+            self.list_folder.addItem(item)
+
+            for folder_name in dir_dict['folders']:
+                item = QtWidgets.QListWidgetItem(folder_name)
+                item.setIcon(QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.SP_DirIcon))
+                self.list_folder.addItem(item)
+            for filename in dir_dict['files']:
+                item = QtWidgets.QListWidgetItem(filename)
+                item.setIcon(QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.SP_FileIcon))
+                self.list_folder.addItem(item)
         else:
-            QtWidgets.QMessageBox.critical(self, "Error", res["message"])
+            QtWidgets.QMessageBox.critical(self, 'Error', 'Server Error')
 
-    def accept_up(self):
-        username = self.textEdit_username.text()
-        password = self.textEdit_password.text()
-        self.user = UserAccount(self.url)
-        res = self.user.sign_up(username, password)
-        if res['stat']:
-            self.label_res.setStyleSheet("color: green")
-            QtWidgets.QMessageBox.information(self, "Account Created", res["message"])
+    def itemDoubleClicked(self, item: QtWidgets.QListWidgetItem):
+        name = item.text()
+        isfolder = item.icon().name() == 'folder'
+        if isfolder:
+            self.root = os.path.join(self.line_address.text(), name)
+            self.request_dir()
         else:
-            self.label_res.setStyleSheet("color: red")
-            # self.label_res.setText(res['message'])
-            QtWidgets.QMessageBox.critical(self, "Error", res["message"])
+            ret = self.api.post_raw_data(raw_data_path=os.path.join(self.line_address.text(), name),
+                                         mode=1,
+                                         varname=self.line_varname.text())
+            if ret['stat']:
+                QtWidgets.QMessageBox.information(self, 'Info', 'File successfully added.')
+            else:
+                QtWidgets.QMessageBox.critical(self, 'Error', ret['message'])
