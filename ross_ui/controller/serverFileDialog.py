@@ -49,5 +49,6 @@ class ServerFileDialogApp(ServerFileDialog):
                                          varname=self.line_varname.text())
             if ret['stat']:
                 QtWidgets.QMessageBox.information(self, 'Info', 'File successfully added.')
+                super().accept()
             else:
                 QtWidgets.QMessageBox.critical(self, 'Error', ret['message'])

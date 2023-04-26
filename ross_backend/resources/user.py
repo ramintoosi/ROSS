@@ -41,8 +41,7 @@ class UserRegister(Resource):
         proj.save_to_db()
         user.project_default = proj.id
         user.save_to_db()
-        config_detect = ConfigDetectionModel(user_id,
-                                             project_id=proj.id)  # create a default detection config for the default project
+        config_detect = ConfigDetectionModel(user_id, project_id=proj.id)
         config_detect.save_to_db()
         config_sort = ConfigSortModel(user_id, project_id=proj.id)
         config_sort.save_to_db()

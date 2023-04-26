@@ -77,10 +77,7 @@ def t_dist_sorter(alignedSpikeMat, sdd):
     while g >= g_min:
         itr = 0
         # EM
-        print('#' * 10)
-        print('EM Alg. Started...')
         while ((delta_L > delta_L_limit) or (delta_v > delta_v_limit)) and itr < max_iter:
-            print('iteration number = ', itr)
             # print('g = ', g)
             # print('Pi = ', Pi)
             # print('#' * 5)

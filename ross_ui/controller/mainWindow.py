@@ -115,7 +115,7 @@ class MainApp(MainWindow):
                                                                    )
 
         if not filename:
-            return FileNotFoundError('you should select a file')
+            raise FileNotFoundError('you should select a file')
 
         if not os.path.isfile(filename):
             raise FileNotFoundError(filename)
@@ -147,6 +147,7 @@ class MainApp(MainWindow):
 
             with open(address, 'wb') as f:
                 pickle.dump(temp, f)
+
             # -----------------------------------------------------------------------------------------------------
 
         elif file_extension == '.csv':
@@ -192,6 +193,9 @@ class MainApp(MainWindow):
         self.statusBar().showMessage(self.tr("Plotting..."), 2500)
         self.wait()
         self.plotRaw()
+
+        self.spike_mat = None
+        self.spike_time = None
 
         self.plot_histogram_pca.clear()
         self.plot_clusters_pca.clear()
@@ -317,7 +321,21 @@ class MainApp(MainWindow):
     def open_file_dialog_server(self):
         dialog = sever_dialog(self.user)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            pass
+            self.refreshAct.setEnabled(True)
+            self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
+            self.wait()
+
+            self.statusBar().showMessage(self.tr("Plotting..."), 2500)
+            self.wait()
+            self.plotRaw()
+
+            self.spike_mat = None
+            self.spike_time = None
+            self.raw = None
+
+            self.plot_histogram_pca.clear()
+            self.plot_clusters_pca.clear()
+            self.widget_waveform.clear()
 
     def open_server_dialog(self):
         dialog = server_form(server_text=self.url)

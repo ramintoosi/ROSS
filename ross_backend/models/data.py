@@ -79,7 +79,7 @@ class DetectResultModel(db.Model):
     #     return cls.query.filter_by(user_id=_id, project_id=0).first()
 
     @classmethod
-    def find_by_project_id(cls, project_id):
+    def find_by_project_id(cls, project_id) -> DetectResultModel:
         return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):
@@ -119,7 +119,7 @@ class SortResultModel(db.Model):
     #     return cls.query.filter_by(user_id=_id, project_id=0).first()
 
     @classmethod
-    def find_by_project_id(cls, project_id):
+    def find_by_project_id(cls, project_id) -> SortResultModel:
         return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):

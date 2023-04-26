@@ -7,7 +7,7 @@ from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource
 
-from models.data import RawModel
+from models.data import RawModel, DetectResultModel, SortResultModel
 from rutils.io import read_file_in_server
 
 SESSION = dict()
@@ -24,7 +24,8 @@ class RawDataDefault(Resource):
             if raw.mode == 0:
                 response = flask.make_response(raw.data)
                 response.headers.set('Content-Type', 'application/octet-stream')
-                return response, 210
+                response.status_code = 210
+                return response
             else:
                 if request.json['start'] is None:
                     return {'message': 'SERVER MODE'}, 212
@@ -85,7 +86,13 @@ class RawDataDefault(Resource):
 
         try:
             raw.save_to_db()
-        except:
-            return {"message": "An error occurred inserting raw data."}, 500
+            detect_result = DetectResultModel.find_by_project_id(project_id)
+            if detect_result:
+                detect_result.delete_from_db()
+            sort_result = SortResultModel.find_by_project_id(project_id)
+            if sort_result:
+                sort_result.delete_from_db()
+        except Exception as e:
+            return {"message": str(e)}, 500
 
         return "Success", 201
