@@ -72,10 +72,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.closeAct.setEnabled(False)
 
         self.saveAct = QtWidgets.QAction(self.tr("&Save"), self)
+        self.saveAct.setEnabled(False)
         self.saveAct.setShortcut(QtGui.QKeySequence.Save)
         self.saveAct.setStatusTip(self.tr("Save"))
         self.saveAct.setIcon(QtGui.QIcon(icon_path + "Save.png"))
-        self.saveAct.setEnabled(False)
         self.saveAct.triggered.connect(self.onSave)
 
         self.saveAsAct = QtWidgets.QAction(self.tr("&Save As..."), self)
@@ -346,9 +346,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.fileMenu.addAction(self.saveAsAct)
         self.fileMenu.addSeparator()
         self.importMenu = self.fileMenu.addMenu(self.tr("&Import"))
+        self.importMenu.setEnabled(False)
         self.importMenu.addActions(
             (self.importRawAct, self.importRawActServer, self.importDetectedAct, self.importSortedAct))
         self.exportMenu = self.fileMenu.addMenu(self.tr("&Export"))
+        self.exportMenu.setEnabled(False)
         self.exportMenu.addActions((self.exportRawAct, self.exportDetectedAct, self.exportSortedAct))
 
         # ------------------- tool from menu ------------------
@@ -359,6 +361,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # run menu
         self.runMenu = self.menuBar().addMenu(self.tr("&Run"))
+        self.runMenu.setEnabled(False)
         self.runMenu.addAction(self.detectAct)
         self.runMenu.addAction(self.sortAct)
         # self.runMenu.addAction(self.batchAct)
@@ -378,6 +381,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Menu entry for visualization
         self.visMenu = self.menuBar().addMenu(self.tr("&Visualization"))
+        self.visMenu.setEnabled(False)
         self.visMenu.addAction(self.detect3dAct)
         self.visMenu.addAction(self.clusterwaveAct)
         self.visMenu.addAction(self.livetimeAct)
