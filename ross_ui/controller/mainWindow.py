@@ -3,7 +3,6 @@ import os
 import pathlib
 import pickle
 import random
-import time
 import traceback
 from uuid import uuid4
 
@@ -61,13 +60,14 @@ class MainApp(MainWindow):
         self.clusters_tmp = None
         self.clusters_init = None
         self.clusters = None
-        self.colors = None
+        self.colors = self.distin_color(127)
 
-        self.url = 'http://127.0.0.1:5000'
+        self.url = 'http://localhost:5000'
 
         self.raw = None
         self.spike_mat = None
         self.spike_time = None
+        self.cluster_time_vec = None
 
         self.Raw_data_path = os.path.join(pathlib.Path(__file__).parent, '../ross_data/Raw_Data')
         self.pca_path = os.path.join(pathlib.Path(__file__).parent, '../ross_data/pca_images')
@@ -196,6 +196,8 @@ class MainApp(MainWindow):
 
         self.spike_mat = None
         self.spike_time = None
+        self.clusters_tmp = None
+        self.clusters_init = None
 
         self.plot_histogram_pca.clear()
         self.plot_clusters_pca.clear()
@@ -213,74 +215,75 @@ class MainApp(MainWindow):
                 self.wait()
 
     def onImportDetected(self):
-        filename, filetype = QtWidgets.QFileDialog.getOpenFileName(self, self.tr("Open file"), os.getcwd(),
-                                                                   self.tr("Detected Spikes Files(*.mat *.csv *.tdms)"))
-
-        if not filename:
-            return FileNotFoundError('you should select a file')
-
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(filename)
-
-        self.statusBar().showMessage(self.tr("Loading..."))
-        self.wait()
-        file_extension = os.path.splitext(filename)[-1]
-        if file_extension == '.mat':
-            file_raw = sio.loadmat(filename)
-            variables = list(file_raw.keys())
-            if '__version__' in variables:
-                variables.remove('__version__')
-            if '__header__' in variables:
-                variables.remove('__header__')
-            if '__globals__' in variables:
-                variables.remove('__globals__')
-
-            if len(variables) > 1:
-                variable1 = self.open_detected_mat_dialog(variables)
-                # self.wait()
-                if not variable1:
-                    self.statusBar().showMessage(self.tr(" "))
-                    return
-                variable2 = self.open_detected_time_dialog(variables)
-                if not variable2:
-                    self.statusBar().showMessage(self.tr(" "))
-                    return
-            else:
-                return
-
-            temp = file_raw[variable1].flatten()
-            self.spike_mat = temp
-
-            temp = file_raw[variable2].flatten()
-            self.spike_time = temp
-
-        elif file_extension == '.csv':
-            pass
-
-        else:
-            pass
-
-        self.refreshAct.setEnabled(True)
-        self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
-        self.wait()
-
-        self.statusBar().showMessage(self.tr("Plotting..."), 2500)
-        self.wait()
-        self.plotWaveForms()
-        self.plotDetectionResult()
-        self.plotPcaResult()
-
-        if self.user:
-            self.statusBar().showMessage(self.tr("Uploading to server..."))
-            self.wait()
-
-            res = self.user.post_detected_data(self.spike_mat, self.spike_time)
-
-            if res['stat']:
-                self.statusBar().showMessage(self.tr("Uploaded"), 2500)
-                self.wait()
-            else:
-                self.wait()
+        pass
+        # filename, filetype = QtWidgets.QFileDialog.getOpenFileName(self, self.tr("Open file"), os.getcwd(),
+        #                                                            self.tr("Detected Spikes Files(*.mat *.csv *.tdms)"))
+        #
+        # if not filename:
+        #     return FileNotFoundError('you should select a file')
+        #
+        # if not os.path.isfile(filename):
+        #     raise FileNotFoundError(filename)
+        #
+        # self.statusBar().showMessage(self.tr("Loading..."))
+        # self.wait()
+        # file_extension = os.path.splitext(filename)[-1]
+        # if file_extension == '.mat':
+        #     file_raw = sio.loadmat(filename)
+        #     variables = list(file_raw.keys())
+        #     if '__version__' in variables:
+        #         variables.remove('__version__')
+        #     if '__header__' in variables:
+        #         variables.remove('__header__')
+        #     if '__globals__' in variables:
+        #         variables.remove('__globals__')
+        #
+        #     if len(variables) > 1:
+        #         variable1 = self.open_detected_mat_dialog(variables)
+        #         # self.wait()
+        #         if not variable1:
+        #             self.statusBar().showMessage(self.tr(" "))
+        #             return
+        #         variable2 = self.open_detected_time_dialog(variables)
+        #         if not variable2:
+        #             self.statusBar().showMessage(self.tr(" "))
+        #             return
+        #     else:
+        #         return
+        #
+        #     temp = file_raw[variable1].flatten()
+        #     self.spike_mat = temp
+        #
+        #     temp = file_raw[variable2].flatten()
+        #     self.spike_time = temp
+        #
+        # elif file_extension == '.csv':
+        #     pass
+        #
+        # else:
+        #     pass
+        #
+        # self.refreshAct.setEnabled(True)
+        # self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
+        # self.wait()
+        #
+        # self.statusBar().showMessage(self.tr("Plotting..."), 2500)
+        # self.wait()
+        # self.plotWaveForms()
+        # self.plotDetectionResult()
+        # self.plotPcaResult()
+        #
+        # if self.user:
+        #     self.statusBar().showMessage(self.tr("Uploading to server..."))
+        #     self.wait()
+        #
+        #     res = self.user.post_detected_data(self.spike_mat, self.spike_time)
+        #
+        #     if res['stat']:
+        #         self.statusBar().showMessage(self.tr("Uploaded"), 2500)
+        #         self.wait()
+        #     else:
+        #         self.wait()
 
     def onImportSorted(self):
         pass
@@ -332,6 +335,8 @@ class MainApp(MainWindow):
             self.spike_mat = None
             self.spike_time = None
             self.raw = None
+            self.clusters_tmp = None
+            self.clusters_init = None
 
             self.plot_histogram_pca.clear()
             self.plot_clusters_pca.clear()
@@ -390,6 +395,8 @@ class MainApp(MainWindow):
             self.spike_mat = None
             self.spike_time = None
             self.user_name = None
+            self.clusters_tmp = None
+            self.clusters_init = None
             self.accountButton.setIcon(QtGui.QIcon(icon_path + "unverified.png"))
             self.accountButton.setMenu(None)
             self.accountButton.setText('')
@@ -483,13 +490,14 @@ class MainApp(MainWindow):
             res = self.user.get_sorting_result()
             if res['stat']:
                 self.clusters = res['clusters']
+                self.cluster_time_vec = res["cluster_time_vec"]
                 self.clusters_init = self.clusters.copy()
                 self.clusters_tmp = self.clusters.copy()
                 self.statusBar().showMessage(self.tr("Clusters Waveforms..."), 2500)
                 self.wait()
                 self.updateplotWaveForms(self.clusters)
                 self.wait()
-                self.update_plotRaw(self.clusters)
+                self.update_plotRaw()
                 self.wait()
                 self.updateManualClusterList(self.clusters_tmp)
                 self.plotDetectionResult()
@@ -508,7 +516,29 @@ class MainApp(MainWindow):
         self.widget_raw.showGrid(x=True, y=True)
         self.widget_raw.setMouseEnabled(y=False)
 
-    def update_plotRaw(self, clusters):
+    def update_plotRaw(self):
+        curve = HDF5Plot()
+        curve.setAPI(self.user)
+        curve.setHDF5(self.raw)
+        self.widget_raw.clear()
+        self.widget_raw.showGrid(x=True, y=True)
+        self.widget_raw.setMouseEnabled(y=False)
+        self.widget_raw.addItem(curve)
+
+        if self.cluster_time_vec is not None:
+            for i, i_cluster in enumerate(np.unique(self.cluster_time_vec)):
+                if i_cluster == 0:
+                    continue
+                color = self.colors[i - 1]
+                pen = pyqtgraph.mkPen(color=color)
+                curve = HDF5Plot()
+                curve.setAPI(self.user)
+                curve.setHDF5(self.raw, pen)
+                curve.setCluster(self.cluster_time_vec == i_cluster)
+                self.widget_raw.addItem(curve)
+        self.widget_raw.setXRange(0, 10000)
+
+    def _update_plotRaw(self, clusters):
         data = self.raw
         colors = self.colors
         num_of_clusters = self.number_of_clusters
@@ -597,7 +627,6 @@ class MainApp(MainWindow):
         un = np.unique(clusters)
 
         self.number_of_clusters = len(un[un >= 0])
-        self.colors = self.distin_color(self.number_of_clusters)
         spike_clustered = dict()
         for i in range(self.number_of_clusters):
             spike_clustered[i] = spike_mat[clusters == i]
@@ -1012,9 +1041,8 @@ class MainApp(MainWindow):
         """Perform checks in regular intervals."""
         self.mdiArea.checkTimestamps()
 
-    def wait(self, duration=2.0):
+    def wait(self):
         QtWidgets.QApplication.processEvents()
-        time.sleep(duration)
 
     def UpdatedClusterIndex(self):
         cl_ind = np.unique(self.clusters_tmp)
@@ -1412,6 +1440,7 @@ class MainApp(MainWindow):
     def loadDefaultProject(self):
         flag_raw = False
         flag_update_raw = False
+        SERVER_MODE = False
 
         res = self.user.get_config_detect()
         if res['stat']:
@@ -1430,6 +1459,8 @@ class MainApp(MainWindow):
                 self.raw = new_data
                 self.statusBar().showMessage(self.tr("Plotting..."), 2500)
                 self.wait()
+            else:
+                SERVER_MODE = True
             flag_raw = True
 
         res = self.user.get_detection_result()
@@ -1444,6 +1475,7 @@ class MainApp(MainWindow):
         res = self.user.get_sorting_result()
         if res['stat']:
             self.clusters_init = res['clusters']
+            self.cluster_time_vec = res['cluster_time_vec']
             self.clusters = self.clusters_init.copy()
             self.clusters_tmp = self.clusters_init.copy()
             self.updateplotWaveForms(self.clusters_init.copy())
@@ -1454,7 +1486,7 @@ class MainApp(MainWindow):
 
         if flag_raw:
             if flag_update_raw:
-                self.update_plotRaw(self.clusters)
+                self.update_plotRaw()
             else:
                 self.plotRaw()
 

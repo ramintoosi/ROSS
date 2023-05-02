@@ -122,7 +122,7 @@ def spike_detector(data, thr, pre_thresh, post_thresh, dead_time, side):
     indx_spikes = np.nonzero(spike_detected)[0]
 
     SpikeMat = np.zeros((len(indx_spikes), n_points_per_spike))
-    SpikeTime = np.zeros((len(indx_spikes), 1))
+    SpikeTime = np.zeros((len(indx_spikes), ), dtype=np.uint32)
 
     # assigning SpikeMat and SpikeTime matrices
     for i, curr_indx in enumerate(indx_spikes):

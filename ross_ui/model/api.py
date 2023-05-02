@@ -144,13 +144,13 @@ class API():
                 b.seek(0)
 
                 d = np.load(b, allow_pickle=True)
-                return {'stat': True, 'clusters': d['clusters']}
+                return {'stat': True, 'clusters': d['clusters'], "cluster_time_vec": d["cluster_time_vec"]}
             elif response.status_code == 401:
                 ret = self.refresh_jwt_token()
                 if ret:
                     self.get_sorting_result()
 
-            return {'stat': False, 'message': response.json()['message']}
+            return {'stat': False, 'message': response.content}
         return {'stat': False, 'message': 'Not Logged In!'}
 
     def get_config_detect(self):
@@ -188,9 +188,9 @@ class API():
             data['run_detection'] = True
             data['project_id'] = self.project_id
 
-            response = requests.put(self.url + '/detect',
-                                    headers={'Authorization': 'Bearer ' + self.access_token},
-                                    json=data)
+            response = requests.post(self.url + '/detect',
+                                     headers={'Authorization': 'Bearer ' + self.access_token},
+                                     json=data)
             if response.ok:
                 return {'stat': True, 'message': 'success'}
 
@@ -275,5 +275,3 @@ class API():
                     self.browse(root)
             else:
                 return None
-
-

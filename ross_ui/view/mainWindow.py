@@ -11,7 +11,7 @@ from view.PCAManualWidget import PCAManualWidget
 
 icon_path = './view/icons/'
 
-__version__ = "2.0.0"
+__version__ = "2.0.0-alpha"
 
 
 # -----------------------------------------------------------------------------

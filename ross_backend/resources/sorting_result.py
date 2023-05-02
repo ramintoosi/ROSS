@@ -11,6 +11,8 @@ from flask_restful import Resource, reqparse
 
 from models.data import SortResultModel
 
+SESSION = dict()
+
 
 class SortingResultDefault(Resource):
     parser = reqparse.RequestParser()
@@ -18,16 +20,20 @@ class SortingResultDefault(Resource):
 
     @jwt_required
     def get(self):
-        user_id = get_jwt_identity()
         project_id = request.form["project_id"]
-        sort_result = SortResultModel.find_by_project_id(project_id)
+        sort_dict = None
+        if project_id in SESSION:
+            sort_dict = SESSION[project_id]
+        else:
 
-        if sort_result:
-            with open(sort_result.data, 'rb') as f:
-                sort_dict = pickle.load(f)
+            sort_result = SortResultModel.find_by_project_id(project_id)
+
+            if sort_result:
+                with open(sort_result.data, 'rb') as f:
+                    sort_dict = pickle.load(f)
+        if sort_dict is not None:
             buffer = io.BytesIO()
-            print("sort_dict['clusters']", sort_dict['clusters'])
-            np.savez_compressed(buffer, clusters=sort_dict['clusters'])
+            np.savez_compressed(buffer, clusters=sort_dict['clusters'], cluster_time_vec=sort_dict["cluster_time_vec"])
             buffer.seek(0)
             raw_bytes = buffer.read()
             buffer.close()
@@ -38,38 +44,39 @@ class SortingResultDefault(Resource):
 
         return {'message': 'Sort Result Data does not exist'}, 404
 
-    @jwt_required
-    def post(self):
-        filestr = request.data
-        user_id = get_jwt_identity()
-        project_id = request.form["project_id"]
-        if SortResultModel.find_by_project_id(project_id):
-            return {'message': "Detection Result already exists."}, 400
+    # @jwt_required
+    # def post(self):
+    #     filestr = request.data
+    #     user_id = get_jwt_identity()
+    #     project_id = request.form["project_id"]
+    #     if SortResultModel.find_by_project_id(project_id):
+    #         return {'message': "Detection Result already exists."}, 400
+    #
+    #     # data = RawData.parser.parse_args()
+    #
+    #     # print(eval(data['raw']).shape)
+    #     data = SortResultModel(user_id=user_id, data=filestr, project_id=project_id)  # data['raw'])
+    #
+    #     try:
+    #         data.save_to_db()
+    #     except:
+    #         return {"message": "An error occurred inserting sort result data."}, 500
+    #
+    #     return "Success", 201
 
-        # data = RawData.parser.parse_args()
-
-        # print(eval(data['raw']).shape)
-        data = SortResultModel(user_id=user_id, data=filestr, project_id=project_id)  # data['raw'])
-
-        try:
-            data.save_to_db()
-        except:
-            return {"message": "An error occurred inserting sort result data."}, 500
-
-        return "Success", 201
-
-    @jwt_required
-    def delete(self):
-        user_id = get_jwt_identity()
-        project_id = request.form["project_id"]
-        data = SortResultModel.find_by_project_id(project_id)
-        if data:
-            data.delete_from_db()
-            return {'message': 'Sort Result Data deleted.'}
-        return {'message': 'Sort Result Data does not exist.'}, 404
+    # @jwt_required
+    # def delete(self):
+    #     user_id = get_jwt_identity()
+    #     project_id = request.form["project_id"]
+    #     data = SortResultModel.find_by_project_id(project_id)
+    #     if data:
+    #         data.delete_from_db()
+    #         return {'message': 'Sort Result Data deleted.'}
+    #     return {'message': 'Sort Result Data does not exist.'}, 404
 
     @jwt_required
     def put(self):
+        # TODO : changes must be applied to cluster_time_vec
         # filestr = request.data
         user_id = get_jwt_identity()
 
