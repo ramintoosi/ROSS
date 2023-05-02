@@ -103,6 +103,54 @@ class MainApp(MainWindow):
         self.closeBottonPCAManual.clicked.connect(self.PCAManualCloseButton)
         self.doneBottonPCAManual.clicked.connect(self.PCAManualDoneButton)
 
+    def resetOnSignOutVars(self):
+
+        self.raw = None
+        self.spike_mat = None
+        self.spike_time = None
+        self.user_name = None
+        self.user = None
+        self.image = None
+        self.pca_spikes = None
+        self.number_of_clusters = None
+        self.clusters_tmp = None
+        self.clusters_init = None
+        self.clusters = None
+        self.cluster_time_vec = None
+
+        self.user = None
+        self.user_name = None
+        self.current_project = None
+
+        self.saveManualFlag = False
+        self.plotManualFlag = False
+        self.resetManualFlag = False
+        self.undoManualFlag = False
+
+        self.tempList = []
+
+    def resetOnImportVars(self):
+
+        # initial values for software options
+        self.pca_manual = None
+        self.image = None
+        self.pca_spikes = None
+        self.number_of_clusters = None
+        self.clusters_tmp = None
+        self.clusters_init = None
+        self.clusters = None
+
+        self.spike_mat = None
+        self.spike_time = None
+        self.cluster_time_vec = None
+
+        self.saveManualFlag = False
+        self.plotManualFlag = False
+        self.resetManualFlag = False
+        self.undoManualFlag = False
+        self.tempList = []
+
+
     def onUserAccount(self):
         if self.user is None:
             self.open_signin_dialog()
@@ -194,10 +242,7 @@ class MainApp(MainWindow):
         self.wait()
         self.plotRaw()
 
-        self.spike_mat = None
-        self.spike_time = None
-        self.clusters_tmp = None
-        self.clusters_init = None
+        self.resetOnImportVars()
 
         self.plot_histogram_pca.clear()
         self.plot_clusters_pca.clear()
@@ -332,11 +377,7 @@ class MainApp(MainWindow):
             self.wait()
             self.plotRaw()
 
-            self.spike_mat = None
-            self.spike_time = None
-            self.raw = None
-            self.clusters_tmp = None
-            self.clusters_init = None
+            self.resetOnImportVars()
 
             self.plot_histogram_pca.clear()
             self.plot_clusters_pca.clear()
@@ -391,19 +432,14 @@ class MainApp(MainWindow):
     def onSignOut(self):
         res = self.user.sign_out()
         if res['stat']:
-            self.raw = None
-            self.spike_mat = None
-            self.spike_time = None
-            self.user_name = None
-            self.clusters_tmp = None
-            self.clusters_init = None
+            self.resetOnSignOutVars()
+
             self.accountButton.setIcon(QtGui.QIcon(icon_path + "unverified.png"))
             self.accountButton.setMenu(None)
             self.accountButton.setText('')
             self.accountButton.setStatusTip("Sign In/Up")
             self.logInAct.setEnabled(True)
             self.logOutAct.setEnabled(False)
-            self.user = None
             # self.saveAct.setEnabled(False)
             # self.saveAsAct.setEnabled(False)
             self.importMenu.setEnabled(False)
