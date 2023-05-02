@@ -538,28 +538,6 @@ class MainApp(MainWindow):
                 self.widget_raw.addItem(curve)
         self.widget_raw.setXRange(0, 10000)
 
-    def _update_plotRaw(self, clusters):
-        data = self.raw
-        colors = self.colors
-        num_of_clusters = self.number_of_clusters
-        spike_time = self.spike_time
-        time = SegmentedTime(spike_time, clusters)
-        multi_curve = MultiColoredCurve(data, time, num_of_clusters, len(data))
-        self.widget_raw.clear()
-        for i in range(num_of_clusters + 1):
-            curve = HDF5Plot()
-            if i == num_of_clusters:
-                color = (255, 255, 255)
-                pen = pyqtgraph.mkPen(color=color)
-            else:
-                color = colors[i]
-                pen = pyqtgraph.mkPen(color=color)
-            curve.setHDF5(multi_curve.curves[str(i)], pen)
-            self.widget_raw.addItem(curve)
-            self.widget_raw.setXRange(0, 10000)
-            self.widget_raw.showGrid(x=True, y=True)
-            self.widget_raw.setMouseEnabled(y=False)
-
     def onVisPlot(self):
         self.widget_visualizations()
 
