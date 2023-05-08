@@ -1,4 +1,3 @@
-import enum
 import os
 import pathlib
 import pickle
@@ -14,7 +13,6 @@ import pyqtgraph.exporters
 import pyqtgraph.opengl as gl
 import scipy.io as sio
 import scipy.stats as stats
-import sklearn.decomposition as decom
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtGui import QPixmap, QTransform, QColor, QIcon
 from colour import Color
@@ -26,11 +24,9 @@ from controller.detectedMatSelect import DetectedMatSelectApp as detected_mat_fo
 from controller.detectedTimeSelect import DetectedTimeSelectApp as detected_time_form
 from controller.hdf5 import HDF5Plot
 from controller.matplot_figures import MatPlotFigures
-from controller.multicolor_curve import MultiColoredCurve
 from controller.projectSelect import projectSelectApp as project_form
 from controller.rawSelect import RawSelectApp as raw_form
 from controller.saveAs import SaveAsApp as save_as_form
-from controller.segmented_time import SegmentedTime
 from controller.serverAddress import ServerApp as server_form
 from controller.serverFileDialog import ServerFileDialogApp as sever_dialog
 from controller.signin import SigninApp as signin_form
@@ -38,11 +34,7 @@ from view.mainWindow import MainWindow
 
 icon_path = './view/icons/'
 
-
-class softwareMode(enum.Enum):
-    SAME_PALACE = 0
-    CLIENT_SIDE = 1
-    SERVER_SIDE = 2
+os.makedirs('.tmp', exist_ok=True)
 
 
 class MainApp(MainWindow):
@@ -60,6 +52,7 @@ class MainApp(MainWindow):
         self.clusters_tmp = None
         self.clusters_init = None
         self.clusters = None
+        self.inds = None
         self.colors = self.distin_color(127)
 
         self.url = 'http://localhost:5000'
@@ -82,7 +75,6 @@ class MainApp(MainWindow):
         self.plotManualFlag = False
         self.resetManualFlag = False
         self.undoManualFlag = False
-        self.mode = softwareMode.SAME_PALACE
         self.tempList = []
 
         self.startDetection.pressed.connect(self.onDetect)
@@ -149,7 +141,6 @@ class MainApp(MainWindow):
         self.resetManualFlag = False
         self.undoManualFlag = False
         self.tempList = []
-
 
     def onUserAccount(self):
         if self.user is None:
@@ -486,6 +477,8 @@ class MainApp(MainWindow):
             if res['stat']:
                 self.spike_mat = res['spike_mat']
                 self.spike_time = res['spike_time']
+                self.pca_spikes = res['pca_spikes']
+                self.inds = res['inds']
                 self.statusBar().showMessage(self.tr("Plotting..."), 2500)
                 self.wait()
                 self.plotDetectionResult()
@@ -632,18 +625,18 @@ class MainApp(MainWindow):
             clusters_ = self.clusters_tmp.copy()
 
         if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
+            spike_mat = self.spike_mat[self.clusters_tmp[self.inds,] != -1, :]
         else:
             spike_mat = self.spike_mat
 
-        clusters = clusters_[clusters_ != -1]
+        clusters = clusters_[self.inds][clusters_[self.inds] != -1]
 
         un = np.unique(clusters)
 
         self.number_of_clusters = len(un[un >= 0])
         spike_clustered = dict()
         for i in range(self.number_of_clusters):
-            spike_clustered[i] = spike_mat[clusters == i]
+            spike_clustered[i] = spike_mat[clusters == i, :]
 
         self.widget_waveform.clear()
         self.widget_waveform.showGrid(x=True, y=True)
@@ -788,8 +781,8 @@ class MainApp(MainWindow):
             number_of_clusters = len(np.unique(self.clusters))
 
             # Prepration
-            pca = decom.PCA(n_components=3)
-            pca_spikes = pca.fit_transform(self.spike_mat)
+
+            pca_spikes = self.pca_spikes
             pca1 = pca_spikes[:, 0]
             pca2 = pca_spikes[:, 1]
             pca3 = pca_spikes[:, 2]
@@ -857,8 +850,7 @@ class MainApp(MainWindow):
                 spike_mat = self.spike_mat
 
             self.plot_histogram_pca.clear()
-            pca = decom.PCA(n_components=2)
-            pca_spikes = pca.fit_transform(spike_mat)
+            pca_spikes = self.pca_spikes
             hist, xedges, yedges = np.histogram2d(pca_spikes[:, 0], pca_spikes[:, 1], bins=512)
 
             x_range = xedges[-1] - xedges[0]
@@ -895,16 +887,13 @@ class MainApp(MainWindow):
         self.plot_clusters_pca.clear()
 
         if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
             clusters_ = self.clusters_tmp[self.clusters_tmp != -1]
+            x_data = self.pca_spikes[self.clusters_tmp != -1, 0]
+            y_data = self.pca_spikes[self.clusters_tmp != -1, 1]
         else:
-            spike_mat = self.spike_mat
             clusters_ = None
-
-        pca = decom.PCA(n_components=2)
-        pca_spikes = pca.fit_transform(spike_mat)
-        x_data = pca_spikes[:, 0]
-        y_data = pca_spikes[:, 1]
+            x_data = self.pca_spikes[:, 0]
+            y_data = self.pca_spikes[:, 1]
 
         scatter = pyqtgraph.ScatterPlotItem()
 
@@ -953,8 +942,7 @@ class MainApp(MainWindow):
         self.subwindow_detect3d.setVisible(True)
 
         try:
-            pca = decom.PCA(n_components=2)
-            pca_spikes = pca.fit_transform(self.spike_mat)
+            pca_spikes = self.pca_spikes
             hist, xedges, yedges = np.histogram2d(pca_spikes[:, 0], pca_spikes[:, 1], bins=512)
 
             gx = gl.GLGridItem()
@@ -993,8 +981,7 @@ class MainApp(MainWindow):
         self.subwindow_detect3d.setVisible(False)
 
     def onDetect3D1(self):
-        pca = decom.PCA(n_components=2)
-        pca_spikes = pca.fit_transform(self.spike_mat)
+        pca_spikes = self.pca_spikes
         hist, xedges, yedges = np.histogram2d(pca_spikes[:, 0], pca_spikes[:, 1], bins=512)
         xpos, ypos = np.meshgrid(xedges[:-1] + xedges[1:], yedges[:-1] + yedges[1:]) - (xedges[1] - xedges[0])
         xpos = xpos.flatten() * 1. / 2
@@ -1164,7 +1151,7 @@ class MainApp(MainWindow):
             self.updateplotWaveForms(self.clusters_tmp.copy())
             self.statusBar().showMessage(self.tr("Updating Spikes Waveforms..."))
             self.wait()
-            self.update_plotRaw(self.clusters_tmp.copy())
+            self.update_plotRaw()
             self.statusBar().showMessage(self.tr("Updating Raw Data Waveforms..."), 2000)
             self.plotManualFlag = False
 
@@ -1191,28 +1178,28 @@ class MainApp(MainWindow):
         self.saveManualFlag = False
 
     def onSaveManualSorting(self):
-        if self.saveManualFlag:
-            self.clusters = self.clusters_tmp.copy()
-            # self.number_of_clusters = np.shape(np.unique(self.clusters))[0]
-            self.statusBar().showMessage(self.tr("Save Clustering Results..."))
+        # if self.saveManualFlag:
+        self.clusters = self.clusters_tmp.copy()
+        # self.number_of_clusters = np.shape(np.unique(self.clusters))[0]
+        self.statusBar().showMessage(self.tr("Save Clustering Results..."))
+        self.wait()
+
+        res = self.user.save_sort_results(self.clusters)
+        if res['stat']:
             self.wait()
+            self.statusBar().showMessage(self.tr("Updating Spikes Waveforms..."))
+            self.updateplotWaveForms(self.clusters)
+            self.wait()
+            self.statusBar().showMessage(self.tr("Updating Raw Data Waveforms..."), 2000)
+            self.update_plotRaw()
+            self.wait()
+            self.statusBar().showMessage(self.tr("Saving Done."))
+            self.updateManualClusterList(self.clusters_tmp)
+            # self.updateManualSortingView()
+        else:
+            self.statusBar().showMessage(self.tr("An error occurred in saving!..."), 2000)
 
-            res = self.user.save_sort_results(self.clusters)
-            if res['stat']:
-                self.wait()
-                self.statusBar().showMessage(self.tr("Updating Spikes Waveforms..."))
-                self.updateplotWaveForms(self.clusters)
-                self.wait()
-                self.statusBar().showMessage(self.tr("Updating Raw Data Waveforms..."), 2000)
-                self.update_plotRaw(self.clusters)
-                self.wait()
-                self.statusBar().showMessage(self.tr("Saving Done."))
-                self.updateManualClusterList(self.clusters_tmp)
-                # self.updateManualSortingView()
-            else:
-                self.statusBar().showMessage(self.tr("An error occurred in saving!..."), 2000)
-
-            self.saveManualFlag = False
+        self.saveManualFlag = False
 
     def onUndoManualSorting(self):
         try:
@@ -1349,13 +1336,8 @@ class MainApp(MainWindow):
         self.subwindow_assign.setVisible(False)
 
     def OnPcaRemove(self):
-        if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
-        else:
-            spike_mat = self.spike_mat
 
-        pca = decom.PCA(n_components=2)
-        self.pca_spikes = pca.fit_transform(spike_mat)
+        self.pca_spikes = self.pca_spikes
         hist, xedges, yedges = np.histogram2d(self.pca_spikes[:, 0], self.pca_spikes[:, 1], bins=512)
 
         x_range = xedges[-1] - xedges[0]
@@ -1372,7 +1354,7 @@ class MainApp(MainWindow):
         if image._renderRequired:
             image.render()
         image.qimage = image.qimage.transformed(QTransform().scale(1, -1))
-        image.save('test.png')
+        image.save('.tmp/test.png')
 
         self.PCAManualResetButton()
         self.subwindow_pca_manual.setVisible(True)
@@ -1381,13 +1363,8 @@ class MainApp(MainWindow):
     def PCAManualDoneButton(self):
 
         points = self.subwindow_pca_manual.widget().points.copy()
-        if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
-        else:
-            spike_mat = self.spike_mat
 
-        pca = decom.PCA(n_components=2)
-        self.pca_spikes = pca.fit_transform(spike_mat)
+        self.pca_spikes = self.pca_spikes
         hist, xedges, yedges = np.histogram2d(self.pca_spikes[:, 0], self.pca_spikes[:, 1], bins=512)
         x_range = xedges[-1] - xedges[0]
         y_range = yedges[-1] - yedges[0]
@@ -1433,7 +1410,7 @@ class MainApp(MainWindow):
 
     def PCAManualResetButton(self):
         self.subwindow_pca_manual.widget().reset()
-        self.image = QPixmap('test.png')
+        self.image = QPixmap('.tmp/test.png')
         self.label_pca_manual.setMaximumWidth(self.image.width())
         self.label_pca_manual.setMaximumHeight(self.image.height())
         self.label_pca_manual.resize(self.image.width(), self.image.height())
@@ -1481,6 +1458,8 @@ class MainApp(MainWindow):
         if res['stat']:
             self.spike_mat = res['spike_mat']
             self.spike_time = res['spike_time']
+            self.pca_spikes = res['pca_spikes']
+            self.inds = res['inds']
             self.plotWaveForms()
             self.plotDetectionResult()
             self.plotPcaResult()

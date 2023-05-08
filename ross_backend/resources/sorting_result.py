@@ -2,6 +2,7 @@ import io
 import os.path
 import pickle
 from uuid import uuid4
+from pathlib import Path
 
 import flask
 import numpy as np
@@ -9,7 +10,9 @@ from flask import request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource, reqparse
 
-from models.data import SortResultModel
+from models.data import SortResultModel, RawModel, DetectResultModel
+from resources.detection_result import SESSION as DET_SESSION
+from resources.funcs.sorting import create_cluster_time_vec
 
 SESSION = dict()
 
@@ -44,39 +47,8 @@ class SortingResultDefault(Resource):
 
         return {'message': 'Sort Result Data does not exist'}, 404
 
-    # @jwt_required
-    # def post(self):
-    #     filestr = request.data
-    #     user_id = get_jwt_identity()
-    #     project_id = request.form["project_id"]
-    #     if SortResultModel.find_by_project_id(project_id):
-    #         return {'message': "Detection Result already exists."}, 400
-    #
-    #     # data = RawData.parser.parse_args()
-    #
-    #     # print(eval(data['raw']).shape)
-    #     data = SortResultModel(user_id=user_id, data=filestr, project_id=project_id)  # data['raw'])
-    #
-    #     try:
-    #         data.save_to_db()
-    #     except:
-    #         return {"message": "An error occurred inserting sort result data."}, 500
-    #
-    #     return "Success", 201
-
-    # @jwt_required
-    # def delete(self):
-    #     user_id = get_jwt_identity()
-    #     project_id = request.form["project_id"]
-    #     data = SortResultModel.find_by_project_id(project_id)
-    #     if data:
-    #         data.delete_from_db()
-    #         return {'message': 'Sort Result Data deleted.'}
-    #     return {'message': 'Sort Result Data does not exist.'}, 404
-
     @jwt_required
     def put(self):
-        # TODO : changes must be applied to cluster_time_vec
         # filestr = request.data
         user_id = get_jwt_identity()
 
@@ -85,13 +57,29 @@ class SortingResultDefault(Resource):
         b.seek(0)
         d = np.load(b, allow_pickle=True)
 
-        project_id = d["project_id"]
+        project_id = int(d["project_id"])
         clusters = d["clusters"]
         b.close()
 
-        save_sort_result_path = '../ross_data/Sort_Result/' + str(uuid4()) + '.pkl'
+        detect_result = None
+        if project_id in DET_SESSION:
+            detect_result = DET_SESSION[project_id]
+        else:
+            detect_result_model = DetectResultModel.find_by_project_id(project_id)
+            if detect_result_model:
+                with open(detect_result_model.data, 'rb') as f:
+                    detect_result = pickle.load(f)
+            DET_SESSION[project_id] = detect_result
+        if detect_result is None:
+            return {"message": "No Detection"}, 400
+
+        save_sort_result_path = str(Path(RawModel.find_by_project_id(project_id).data).parent /
+                                    (str(uuid4()) + '.pkl'))
+
+        cluster_time_vec = create_cluster_time_vec(detect_result['spikeTime'], clusters, detect_result['config'])
+
         with open(save_sort_result_path, 'wb') as f:
-            pickle.dump({"clusters": clusters}, f)
+            pickle.dump({"clusters": clusters, "cluster_time_vec": cluster_time_vec}, f)
         data = SortResultModel.find_by_project_id(int(project_id))
         if data:
             if os.path.isfile(data.data):

@@ -123,14 +123,16 @@ class API():
                 b.write(response.content)
                 b.seek(0)
                 d = np.load(b, allow_pickle=True)
-                return {'stat': True, 'spike_mat': d['spike_mat'], 'spike_time': d['spike_time']}
+                return {'stat': True,
+                        'spike_mat': d['spike_mat'], 'spike_time': d['spike_time'],
+                        'pca_spikes': d['pca_spikes'], 'inds': d['inds']}
 
             elif response.status_code == 401:
                 ret = self.refresh_jwt_token()
                 if ret:
                     self.get_detection_result()
 
-            return {'stat': False, 'message': response.json()['message']}
+            return {'stat': False, 'message': response.content}
         return {'stat': False, 'message': 'Not Logged In!'}
 
     def get_sorting_result(self):
@@ -257,7 +259,7 @@ class API():
                 ret = self.refresh_jwt_token()
                 if ret:
                     self.save_sort_results(clusters)
-            return {'stat': False, 'message': response.json()["message"]}
+            return {'stat': False, 'message': response.content}
         return {'stat': False, 'message': 'Not Logged In!'}
 
     def browse(self, root: str):

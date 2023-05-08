@@ -69,8 +69,12 @@ class DetectDefault(Resource):
                 return {"message": "An error occurred inserting detection config."}, 500
         # if data['run_detection']:
         try:
-            spikeMat, spikeTime = startDetection(project_id)
-            data_file = {'spikeMat': spikeMat, 'spikeTime': spikeTime, 'config': config.json()}
+
+            spikeMat, spikeTime, pca_spikes, inds = startDetection(project_id)
+
+            data_file = {'spikeMat': spikeMat, 'spikeTime': spikeTime,
+                         'config': config.json(), 'pca_spikes': pca_spikes,
+                         'inds': inds}
             # -------------------------------------------------------
             print("inserting detection result to database")
 

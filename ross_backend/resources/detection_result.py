@@ -30,12 +30,14 @@ class DetectionResultDefault(Resource):
             SESSION[project_id] = detect_result
 
         if detect_result is not None:
-
+            inds = detect_result['inds']
             buffer = io.BytesIO()
             np.savez_compressed(buffer,
-                                spike_mat=detect_result['spikeMat'],
-                                spike_time=detect_result['spikeTime'],
-                                config=detect_result['config'])
+                                spike_mat=detect_result['spikeMat'][inds[:100], :],
+                                spike_time=detect_result['spikeTime'][inds[:100], ],
+                                config=detect_result['config'],
+                                pca_spikes=detect_result['pca_spikes'],
+                                inds=inds[:100])
             buffer.seek(0)
             raw_bytes = buffer.read()
             buffer.close()

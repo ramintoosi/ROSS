@@ -8,7 +8,6 @@ from flask_restful import Resource, reqparse, request
 
 from models.config import ConfigSortModel
 from models.data import SortResultModel, RawModel
-from models.project import ProjectModel
 from resources.funcs.sorting import startSorting, startReSorting
 from resources.sorting_result import SESSION
 

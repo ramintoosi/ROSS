@@ -1,8 +1,10 @@
 import pickle
+import random
 
 import numpy as np
 import pyyawt
 import scipy.signal
+import sklearn.decomposition as decom
 
 from models.config import ConfigDetectionModel
 from models.data import RawModel
@@ -52,7 +54,13 @@ def startDetection(project_id):
     # spike detection
     SpikeMat, SpikeTime = spike_detector(data_filtered, thr, pre_thr, post_thr, dead_time, thr_side)
     # print("SpikeMat shape and SpikeTime shape : ", SpikeMat.shape, SpikeTime.shape)
-    return SpikeMat, SpikeTime
+
+    pca = decom.PCA(n_components=3)
+    pca_spikes = pca.fit_transform(SpikeMat)
+    inds = list(range(pca_spikes.shape[0]))
+    random.shuffle(inds)
+
+    return SpikeMat, SpikeTime, pca_spikes, tuple(inds)
 
 
 # Threshold
@@ -75,11 +83,8 @@ def threshold_calculator(method, thr_factor, data):
 
 # Filtering
 def filtering(data, forder, fRp, fRs, sr):
-    # print('inside filtering!')
     b, a = scipy.signal.butter(forder, (fRp / (sr / 2), fRs / (sr / 2)), btype='bandpass')
-    # print('after b, a')
     data_filtered = scipy.signal.filtfilt(b, a, data)
-    # print('after filtfilt!')
     return data_filtered
 
 
