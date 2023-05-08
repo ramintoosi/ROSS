@@ -998,7 +998,7 @@ class MainApp(MainWindow):
                 cnt += 1
 
     def manualPreparingSorting(self, temp):
-        if len(self.tempList) == 5:
+        if len(self.tempList) == 10:
             self.tempList.pop(0)
         self.tempList.append(temp)
         self.plotManualFlag = True
@@ -1023,10 +1023,10 @@ class MainApp(MainWindow):
             act = self.manualActWidget.currentItem()
             clusters = self.listWidget.selectedIndexes()
             selected_clusters = [cl.row() for cl in clusters]
+            self.manualPreparingSorting(self.clusters_tmp.copy())
             if act.text() == 'Merge':
                 try:
                     self.mergeManual(selected_clusters)
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
                     self.updateManualClusterList(self.clusters_tmp.copy())
                 except:
                     print("an error accrued in manual Merge")
@@ -1034,7 +1034,6 @@ class MainApp(MainWindow):
             elif act.text() == 'Remove':
                 try:
                     self.removeManual(selected_clusters)
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
                     self.updateManualClusterList(self.clusters_tmp.copy())
                     self.plotHistFlag = True
                 except:
@@ -1043,7 +1042,6 @@ class MainApp(MainWindow):
             elif act.text() == 'Assign to nearest':
                 try:
                     self.assignManual()
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
 
                 except:
                     print("an error accrued in manual Assign to nearest")
@@ -1052,7 +1050,6 @@ class MainApp(MainWindow):
                 try:
                     self.pca_manual = "Remove"
                     self.OnPcaRemove()
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
                     self.plotHistFlag = True
 
                 except:
@@ -1061,7 +1058,6 @@ class MainApp(MainWindow):
                 try:
                     self.pca_manual = "Group"
                     self.OnPcaRemove()
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
 
                 except:
                     print(traceback.format_exc())
@@ -1069,7 +1065,6 @@ class MainApp(MainWindow):
             elif act.text() == "Resort":
                 try:
                     self.manualResort(selected_clusters)
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
                     self.updateManualClusterList(self.clusters_tmp.copy())
                 except:
                     print("an error accrued in manual resort")
@@ -1110,7 +1105,7 @@ class MainApp(MainWindow):
         self.statusBar().showMessage(self.tr("Resetting Spikes Waveforms..."))
         self.wait()
 
-        self.update_plotRaw(self.clusters_init.copy())
+        self.update_plotRaw()
         self.statusBar().showMessage(self.tr("Resetting Raw Data Waveforms..."), 2000)
 
         self.resetManualFlag = False
@@ -1143,11 +1138,11 @@ class MainApp(MainWindow):
 
     def onUndoManualSorting(self):
         try:
-            self.tempList.pop()
-            if len(self.tempList) != 0:
-                self.clusters_tmp = self.tempList[-1]
+
+            if len(self.tempList) > 0:
+                self.clusters_tmp = self.tempList.pop()
             else:
-                self.clusters_tmp = self.clusters_init.copy()
+                QtWidgets.QMessageBox.information(self, "ROSS", "No More Undo :(")
 
             # update cluster list
             self.updateManualClusterList(self.clusters_tmp)
@@ -1237,12 +1232,12 @@ class MainApp(MainWindow):
                 self.statusBar().showMessage(self.tr("Assigning Source Cluster to Targets..."))
                 self.wait()
 
-                source_spikes = self.spike_mat[self.clusters_tmp == source_cluster]
+                source_spikes = self.pca_spikes[self.clusters_tmp == source_cluster]
                 source_ind = np.nonzero(self.clusters_tmp == source_cluster)
 
                 target_avg = np.zeros((len(target_clusters), source_spikes.shape[1]))
                 for it, target in enumerate(target_clusters):
-                    target_avg[it, :] = np.average(self.spike_mat[self.clusters_tmp == target], axis=0)
+                    target_avg[it, :] = np.average(self.pca_spikes[self.clusters_tmp == target], axis=0)
                 # TODO: check different nearest_neighbors algorithms
                 nbrs = NearestNeighbors(n_neighbors=1).fit(target_avg)
                 indices = nbrs.kneighbors(source_spikes, return_distance=False)
@@ -1255,16 +1250,14 @@ class MainApp(MainWindow):
 
                 self.listSourceWidget.clear()
                 self.listTargetsWidget.clear()
-
-                for i in range(len(np.unique(self.clusters_tmp))):
+                # TODO: check for all bugs like this
+                # for i in range(len(np.unique(self.clusters_tmp))):
+                cu = np.unique(self.clusters_tmp)
+                for i in range(len(cu[cu != -1])):
                     item = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
                     self.listSourceWidget.addItem(item)
+                    self.listTargetsWidget.addItem(item)
 
-                for i in range(len(np.unique(self.clusters_tmp))):
-                    item_target = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
-                    self.listTargetsWidget.addItem(item_target)
-
-                self.manualPreparingSorting(self.clusters_tmp.copy())
             else:
                 self.statusBar().showMessage(self.tr("You Should Choose One Source and at least One Target..."), 2000)
 
@@ -1345,8 +1338,8 @@ class MainApp(MainWindow):
         self.subwindow_pca_manual.setVisible(False)
         self.updateplotWaveForms(self.clusters_tmp.copy())
         self.updateManualClusterList(self.clusters_tmp.copy())
-        self.plotDetectionResult()
-        self.plotPcaResult()
+        # self.plotDetectionResult()
+        # self.plotPcaResult()
 
     def PCAManualResetButton(self):
         self.subwindow_pca_manual.widget().reset()
