@@ -618,7 +618,7 @@ class MainApp(MainWindow):
             h = h % 1
             colors.append(self.hsv_to_rgb(h, 0.99, 0.99))
 
-        return np.array(colors)
+        return np.array(colors, dtype=int)
 
     def updateplotWaveForms(self, clusters_=None):
         if clusters_ is None:
@@ -677,55 +677,38 @@ class MainApp(MainWindow):
 
         self.widget_waveform.autoRange()
 
-    def create_sub_base(self):
-        self.number_of_clusters = np.shape(np.unique(self.clusters))[0]
-        # self.number_of_clusters = len(np.unique(self.clusters))
-        if self.number_of_clusters % 3 != 0:
-            nrow = int(self.number_of_clusters / 3) + 1
-        else:
-            nrow = int(self.number_of_clusters / 3)
-
-        self.sub_base = str(nrow) + str(3)
-
     def onPlotClusterWave(self):
         try:
-            self.create_sub_base()
+            # self.create_sub_base()
             number_of_clusters = self.number_of_clusters
             colors = self.colors
             spike_clustered = dict()
             for i in range(number_of_clusters):
-                spike_clustered[i] = self.spike_mat[self.clusters_tmp == i]
+                spike_clustered[i] = self.spike_mat[self.clusters_tmp[self.inds] == i]
 
-            figure = MatPlotFigures('Clusters Waveform', number_of_clusters, width=10, height=6, dpi=100,
-                                    subplot_base=self.sub_base)
+            figure = MatPlotFigures('Clusters Waveform', number_of_clusters, width=10, height=6, dpi=100)
 
             for i, ax in enumerate(figure.axes):
+                for spike in spike_clustered[i]:
+                    ax.plot(spike, color=tuple(colors[i] / 255), linewidth=1, alpha=0.25)
                 avg = np.average(spike_clustered[i], axis=0)
-                selected_spike = spike_clustered[i][np.sum(np.power(spike_clustered[i] - avg, 2), axis=1) <
-                                                    np.sum(np.power(avg, 2)) * 0.2]
-
-                # selected_spike = spike_clustered[i][:5]
-                ax.plot(avg, color='red', linewidth=3)
-                for spike in selected_spike[:100]:
-                    ax.plot(spike, color=tuple(colors[i] / 255), linewidth=1, alpha=0.125)
+                ax.plot(avg, color='red', linewidth=2)
                 ax.set_title('Cluster {}'.format(i + 1))
             plt.tight_layout()
             plt.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def onPlotLiveTime(self):
         try:
-            self.create_sub_base()
             number_of_clusters = self.number_of_clusters
             colors = self.colors
             spike_clustered_time = dict()
             for i in range(number_of_clusters):
                 spike_clustered_time[i] = self.spike_time[self.clusters == i]
 
-            figure = MatPlotFigures('LiveTime', number_of_clusters, width=10, height=6, dpi=100,
-                                    subplot_base=self.sub_base)
+            figure = MatPlotFigures('LiveTime', number_of_clusters, width=10, height=6, dpi=100)
             for i, ax in enumerate(figure.axes):
                 ax.hist(spike_clustered_time[i], bins=100, color=tuple(colors[i] / 255))
                 ax.set_title('Cluster {}'.format(i + 1))
@@ -733,11 +716,10 @@ class MainApp(MainWindow):
             plt.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def onPlotIsi(self):
         try:
-            self.create_sub_base()
             number_of_clusters = self.number_of_clusters
             colors = self.colors
             spike_clustered_time = dict()
@@ -748,7 +730,7 @@ class MainApp(MainWindow):
                 tmp1 = spike_clustered_time[i][1:].copy()
                 spike_clustered_delta[i] = tmp1 - tmp2
 
-            figure = MatPlotFigures('ISI', number_of_clusters, width=10, height=6, dpi=100, subplot_base=self.sub_base)
+            figure = MatPlotFigures('ISI', number_of_clusters, width=10, height=6, dpi=100)
 
             for i, ax in enumerate(figure.axes):
                 gamma = stats.gamma
@@ -774,7 +756,6 @@ class MainApp(MainWindow):
 
     def Plot3d(self):
         try:
-            self.plot_3d.setCameraPosition(distance=30)
             axis1 = self.axis1ComboBox.currentIndex()
             axis2 = self.axis2ComboBox.currentIndex()
             axis3 = self.axis3ComboBox.currentIndex()
@@ -783,71 +764,34 @@ class MainApp(MainWindow):
             # Prepration
 
             pca_spikes = self.pca_spikes
-            pca1 = pca_spikes[:, 0]
-            pca2 = pca_spikes[:, 1]
-            pca3 = pca_spikes[:, 2]
-            spike_time = np.squeeze(self.spike_time / 100000)
+            pca1 = pca_spikes[self.inds, 0]
+            pca2 = pca_spikes[self.inds, 1]
+            pca3 = pca_spikes[self.inds, 2]
+            spike_time = np.squeeze(self.spike_time[self.inds])
             p2p = np.squeeze(np.abs(np.amax(self.spike_mat, axis=1) - np.amin(self.spike_mat, axis=1)))
             duty = np.squeeze(np.abs(np.argmax(self.spike_mat, axis=1) - np.argmin(self.spike_mat, axis=1)) / 5)
 
-            gx = gl.GLGridItem()
-            gx.rotate(90, 0, 1, 0)
-            gx.setSize(15, 15)
-            gx.translate(-7.5, 0, 0)
-            self.plot_3d.addItem(gx)
-            gy = gl.GLGridItem()
-            gy.rotate(90, 1, 0, 0)
-            gy.setSize(15, 15)
-            gy.translate(0, -7.5, 0)
-            self.plot_3d.addItem(gy)
-            gz = gl.GLGridItem()
-            gz.setSize(15, 15)
-            gz.translate(0, 0, -7.5)
-            self.plot_3d.addItem(gz)
-
-            mode_flag = False
             mode_list = [pca1, pca2, pca3, spike_time, p2p, duty]
-            if (axis1 != axis2) and (axis1 != axis3) and (axis2 != axis3):
-                pos = np.array((mode_list[axis1], mode_list[axis2], mode_list[axis3])).T
-                mode_flag = True
+            a1, a2, a3 = mode_list[axis1], mode_list[axis2], mode_list[axis3]
 
-            if mode_flag:
-                colors = self.colors
-                items = self.plot_3d.items.copy()
-                for it in items:
-                    if type(it) == pyqtgraph.opengl.items.GLScatterPlotItem.GLScatterPlotItem:
-                        self.plot_3d.removeItem(it)
-
-                for i in range(number_of_clusters):
-                    pos_cluster = pos[self.clusters == i, :]
-                    avg = np.average(pos_cluster, axis=0)
-                    selected_pos = pos_cluster[np.sum(np.power((pos[self.clusters == i, :] - avg), 2), axis=1) <
-                                               0.05 * np.amax(np.sum(np.power((pos[self.clusters == i, :] - avg), 2),
-                                                                     axis=1)), :]
-                    ind = np.arange(selected_pos.shape[0])
-                    np.random.shuffle(ind)
-                    scattered_pos = selected_pos[ind[:300], :]
-                    color = np.zeros([np.shape(scattered_pos)[0], 4])
-                    color[:, 0] = colors[i][0] / 255
-                    color[:, 1] = colors[i][1] / 255
-                    color[:, 2] = colors[i][2] / 255
-                    color[:, 3] = 1
-                    self.plot_3d.addItem(gl.GLScatterPlotItem(pos=scattered_pos, size=3, color=color))
-            else:
-                print('Same Axis Error')
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            for i in range(number_of_clusters):
+                ax.scatter(a1[self.clusters_tmp[self.inds] == i], a2[self.clusters_tmp[self.inds] == i],
+                           a3[self.clusters_tmp[self.inds] == i], c='#%02x%02x%02x' % tuple(self.colors[i]))
+            ax.set_xlabel(self.axis1ComboBox.currentText())
+            ax.set_ylabel(self.axis2ComboBox.currentText())
+            ax.set_zlabel(self.axis3ComboBox.currentText())
+            plt.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def close3D(self):
         self.subwindow_3d.setVisible(False)
 
     def plotDetectionResult(self):
         try:
-            if self.clusters_tmp is not None:
-                spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
-            else:
-                spike_mat = self.spike_mat
 
             self.plot_histogram_pca.clear()
             pca_spikes = self.pca_spikes
@@ -881,7 +825,7 @@ class MainApp(MainWindow):
             self.plot_histogram_pca.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def plotPcaResult(self):
         self.plot_clusters_pca.clear()
@@ -975,7 +919,7 @@ class MainApp(MainWindow):
                     self.plot_detect3d.addItem(bg)
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def closeDetect3D(self):
         self.subwindow_detect3d.setVisible(False)
@@ -1112,9 +1056,7 @@ class MainApp(MainWindow):
                     self.plotHistFlag = True
 
                 except:
-                    print("an error accrued in manual pcaRemove")
                     print(traceback.format_exc())
-                    pass
             elif act.text() == "PCA Group":
                 try:
                     self.pca_manual = "Group"
@@ -1122,9 +1064,7 @@ class MainApp(MainWindow):
                     self.manualPreparingSorting(self.clusters_tmp.copy())
 
                 except:
-                    print("an error accrued in manual pcaGroup")
                     print(traceback.format_exc())
-                    pass
 
             elif act.text() == "Resort":
                 try:
@@ -1282,7 +1222,7 @@ class MainApp(MainWindow):
                 self.listTargetsWidget.addItem(item_target)
             self.listTargetsWidget.setCurrentItem(item_target)
         except:
-            pass
+            print(traceback.format_exc())
 
     def onAssignManualSorting(self):
         source = self.listSourceWidget.currentItem()
@@ -1330,7 +1270,7 @@ class MainApp(MainWindow):
 
             self.updateManualClusterList(self.clusters_tmp)
         except:
-            pass
+            print(traceback.format_exc())
 
     def closeAssign(self):
         self.subwindow_assign.setVisible(False)

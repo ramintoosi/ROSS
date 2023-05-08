@@ -10,6 +10,7 @@ from flask_restful import Resource, reqparse
 from models.data import DetectResultModel
 
 SESSION = dict()
+DATA_NUM_TO_SEND = 1000
 
 
 class DetectionResultDefault(Resource):
@@ -33,11 +34,11 @@ class DetectionResultDefault(Resource):
             inds = detect_result['inds']
             buffer = io.BytesIO()
             np.savez_compressed(buffer,
-                                spike_mat=detect_result['spikeMat'][inds[:100], :],
-                                spike_time=detect_result['spikeTime'][inds[:100], ],
+                                spike_mat=detect_result['spikeMat'][inds[:DATA_NUM_TO_SEND], :],
+                                spike_time=detect_result['spikeTime'],
                                 config=detect_result['config'],
                                 pca_spikes=detect_result['pca_spikes'],
-                                inds=inds[:100])
+                                inds=inds[:DATA_NUM_TO_SEND])
             buffer.seek(0)
             raw_bytes = buffer.read()
             buffer.close()
