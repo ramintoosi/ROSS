@@ -76,11 +76,6 @@ class RawDataDefault(Resource):
         if raw:
             raw.data = raw_data_path
             raw.mode = mode
-            try:
-                raw.save_to_db()
-            except Exception as e:
-                return {"message": str(e)}, 500
-            return "Success", 201
         else:
             raw = RawModel(user_id, data=raw_data_path, project_id=project_id, mode=mode)
 
