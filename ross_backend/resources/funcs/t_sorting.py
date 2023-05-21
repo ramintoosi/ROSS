@@ -8,7 +8,6 @@ from resources.funcs.fcm import FCM
 
 def t_dist_sorter(alignedSpikeMat, sdd):
     out = dict()
-    print('t-sorting started!')
 
     g_max = sdd.g_max
     g_min = sdd.g_min
@@ -21,8 +20,6 @@ def t_dist_sorter(alignedSpikeMat, sdd):
     u_limit = sdd.u_lim
 
     # Initialization
-    print('-*-' * 20)
-    print('Initialization Started...')
     nrow = lambda x: x.shape[0]
     ncol = lambda x: x.shape[1]
     n_feat = ncol(SpikeMat)
@@ -39,18 +36,12 @@ def t_dist_sorter(alignedSpikeMat, sdd):
     delta_L = 100
     delta_v = 100
     max_iter = sdd.max_iter
-    print('...Initialization Done!')
 
     # FCM
-    print('-*-' * 20)
-    print('FCM started...')
     mu, U, _ = FCM(SpikeMat, g, [2, 20, 1, 0])
-    print('...FCM Done!')
 
     # Estimate starting point for Sigma and Pi from simple clustering method
     # performed before
-    print('-*-' * 20)
-    print('Estimating Sigma and Pi...')
     rep = np.reshape(np.tile(np.expand_dims(np.arange(g), 1), (1, n_spike)), (g * n_spike, 1))
     rep = np.squeeze(rep)
     rep_data = np.tile(SpikeMat, (g, 1))
@@ -69,18 +60,11 @@ def t_dist_sorter(alignedSpikeMat, sdd):
     v_old = v
     Ltt = []
 
-    print('...Estimation Done!')
-
     # Running clustering algorithm for g in [g_max, ...,g_min]
-    print('-*-' * 20)
-    print('Clustering Started...')
     while g >= g_min:
         itr = 0
         # EM
-        while ((delta_L > delta_L_limit) or (delta_v > delta_v_limit)) and itr < max_iter:
-            # print('g = ', g)
-            # print('Pi = ', Pi)
-            # print('#' * 5)
+        while ((delta_L > delta_L_limit) or (delta_v > delta_v_limit)) and itr < max_iter and len(Pi) > 1:
             n_sigma = Sigma.shape[2]
             detSigma = np.zeros((1, n_sigma))
             rep = np.reshape(np.tile(np.expand_dims(np.arange(g), 1), (1, n_spike)), (g * n_spike, 1))
@@ -174,7 +158,6 @@ def t_dist_sorter(alignedSpikeMat, sdd):
             if n_sigma > 1:
                 P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
             else:
-                print("we are here")
                 P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(detSigma[0])
 
             # P = c * np.exp(-(v + n_feat) * np.log(1 + M / v) / 2) @ np.diag(np.squeeze(detSigma))
@@ -200,12 +183,14 @@ def t_dist_sorter(alignedSpikeMat, sdd):
 
             indx_remove = np.squeeze((Pi == 0))
             mu = mu[np.logical_not(indx_remove)]
+            if len(mu.shape) == 3:
+                mu = mu[0]
             Sigma = Sigma[:, :, indx_remove == False]
             if len(Sigma.shape) > 3:
                 Sigma = Sigma[:, :, :, 0]
             Pi = Pi[indx_remove == False]
-            if len(Pi.shape) > 2:
-                Pi = Pi[:, :, 0]
+            if len(Pi.shape) > 1:
+                Pi = Pi[:, 0]
             # Pi = np.array([d for (d, remove) in zip(Pi, indx_remove) if not remove])
             z = z[:, indx_remove == False]
             if len(z.shape) > 2:
@@ -232,8 +217,6 @@ def t_dist_sorter(alignedSpikeMat, sdd):
             # print('u shape : ', u.shape)
             # print('P shape : ', P.shape)
             # print('delta distance shape : ', delta_distance.shape)
-
-        print('...Em Done!')
 
         if L > L_max:
             L_max = L

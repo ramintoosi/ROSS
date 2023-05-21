@@ -1,6 +1,5 @@
 import pickle
-
-import numpy as np
+from typing import Iterable
 
 from models.config import ConfigSortModel
 from models.data import DetectResultModel
@@ -11,7 +10,7 @@ from resources.funcs.sort_utils import *
 from resources.funcs.t_sorting import *
 
 
-def create_cluster_time_vec(spike_time: np.ndarray, clusters: list, config: dict):
+def create_cluster_time_vec(spike_time: np.ndarray, clusters, config: dict):
     cluster_time_vec = np.zeros(spike_time[-1] + config['post_thr'], dtype=np.int8)
     for i, t in enumerate(spike_time):
         cluster_time_vec[t - config['pre_thr']: t + config['post_thr']] = clusters[i]+1
@@ -107,4 +106,4 @@ def startReSorting(project_id, clusters, selected_clusters):
 
     clusters = np.array(clusters)
     clusters[np.isin(clusters, selected_clusters)] = optimal_set + np.max(clusters) + 1
-    return clusters.tolist(), create_cluster_time_vec(spike_time=d['spikeTime'], clusters=optimal_set, config=config_det)
+    return clusters.tolist(), create_cluster_time_vec(spike_time=d['spikeTime'], clusters=clusters, config=config_det)

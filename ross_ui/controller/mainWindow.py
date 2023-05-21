@@ -494,15 +494,6 @@ class MainApp(MainWindow):
         if res['stat']:
             self.statusBar().showMessage(self.tr("Manual ReSorting Done."), 2500)
             self.clusters_tmp = np.array(res['clusters'])
-
-            self.UpdatedClusterIndex()
-            self.statusBar().showMessage(self.tr("Clusters Waveforms Updated..."), 2500)
-            self.wait()
-            self.updateplotWaveForms(self.clusters_tmp)
-            self.wait()
-            self.update_plotRaw(self.clusters_tmp)
-            self.wait()
-            self.updateManualClusterList(self.clusters_tmp)
         else:
             self.statusBar().showMessage(self.tr("Manual ReSorting got error"))
 
@@ -645,25 +636,15 @@ class MainApp(MainWindow):
         for i in range(self.number_of_clusters):
             avg = np.average(spike_clustered[i], axis=0)
             color = self.colors[i]
-            # selected_spike = spike_clustered[i][np.sum(np.power(spike_clustered[i] - avg, 2), axis=1) <
-            #                                     np.sum(np.power(avg, 2)) * 0.2]
 
-            # if self.saveManualFlag or self.plotManualFlag:
             if len(spike_clustered[i]) > 100:
                 ind = np.arange(spike_clustered[i].shape[0])
                 np.random.shuffle(ind)
                 spike = spike_clustered[i][ind[:100], :]
             else:
                 spike = spike_clustered[i]
-
-            # else:
-            #     if len(selected_spike) > 100:
-            #         ind = np.arange(selected_spike.shape[0])
-            #         np.random.shuffle(ind)
-            #         spike = selected_spike[ind[:100], :]
-            #     else:
-            #         spike = selected_spike
-
+            if spike.shape[0] == 0:
+                continue
             x = np.empty(np.shape(spike))
             x[:] = np.arange(np.shape(spike)[1])[np.newaxis]
 
@@ -1051,14 +1032,12 @@ class MainApp(MainWindow):
                     self.pca_manual = "Remove"
                     self.OnPcaRemove()
                     self.plotHistFlag = True
-
                 except:
                     print(traceback.format_exc())
             elif act.text() == "PCA Group":
                 try:
                     self.pca_manual = "Group"
                     self.OnPcaRemove()
-
                 except:
                     print(traceback.format_exc())
 
@@ -1069,6 +1048,7 @@ class MainApp(MainWindow):
                 except:
                     print("an error accrued in manual resort")
                     print(traceback.format_exc())
+            self.UpdatedClusterIndex()
             if self.autoPlotManualCheck.isChecked():
                 self.onPlotManualSorting()
         except:
@@ -1172,8 +1152,6 @@ class MainApp(MainWindow):
             for ind in selected_clusters:
                 self.clusters_tmp[self.clusters_tmp == ind] = sel_cl
 
-            self.UpdatedClusterIndex()
-
             self.statusBar().showMessage(self.tr("...Merging Done!"), 2000)
             self.wait()
         else:
@@ -1185,7 +1163,6 @@ class MainApp(MainWindow):
             self.wait()
             for sel_cl in selected_clusters:
                 self.clusters_tmp[self.clusters_tmp == sel_cl] = - 1
-            self.UpdatedClusterIndex()
             self.statusBar().showMessage(self.tr("...Removing Done!"), 2000)
         else:
             self.statusBar().showMessage(self.tr("For Removing you should select at least one clusters..."), 2000)
@@ -1206,16 +1183,11 @@ class MainApp(MainWindow):
         #     pass
         try:
             self.listSourceWidget.clear()
+            self.listTargetsWidget.clear()
             for i in range(n_clusters):
                 item = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
                 self.listSourceWidget.addItem(item)
-            self.listSourceWidget.setCurrentItem(item)
-
-            self.listTargetsWidget.clear()
-            for i in range(n_clusters):
-                item_target = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
-                self.listTargetsWidget.addItem(item_target)
-            self.listTargetsWidget.setCurrentItem(item_target)
+                self.listTargetsWidget.addItem(item)
         except:
             print(traceback.format_exc())
 
@@ -1242,8 +1214,6 @@ class MainApp(MainWindow):
                 nbrs = NearestNeighbors(n_neighbors=1).fit(target_avg)
                 indices = nbrs.kneighbors(source_spikes, return_distance=False)
                 self.clusters_tmp[source_ind] = np.array(target_clusters)[indices.squeeze()]
-
-                self.UpdatedClusterIndex()
 
                 self.statusBar().showMessage(self.tr("...Assigning to Nearest Clusters Done!"), 2000)
                 self.wait()
@@ -1333,7 +1303,6 @@ class MainApp(MainWindow):
         else:
             print("pca manual flag is not define")
 
-        self.UpdatedClusterIndex()
         self.subwindow_pca_manual.widget().reset()
         self.subwindow_pca_manual.setVisible(False)
         self.updateplotWaveForms(self.clusters_tmp.copy())
