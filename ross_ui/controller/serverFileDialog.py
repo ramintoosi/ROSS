@@ -13,6 +13,8 @@ class ServerFileDialogApp(ServerFileDialog):
         self.root = None
 
         self.list_folder.itemDoubleClicked.connect(self.itemDoubleClicked)
+        self.push_open.clicked.connect(self.pushOpenClicked)
+        self.push_cancel.clicked.connect(self.reject)
 
         self.request_dir()
 
@@ -49,6 +51,13 @@ class ServerFileDialogApp(ServerFileDialog):
                                          varname=self.line_varname.text())
             if ret['stat']:
                 QtWidgets.QMessageBox.information(self, 'Info', 'File successfully added.')
-                super().accept()
+                self.accept()
             else:
                 QtWidgets.QMessageBox.critical(self, 'Error', ret['message'])
+
+    def pushOpenClicked(self):
+        try:
+            self.itemDoubleClicked(self.list_folder.selectedItems()[0])
+        except IndexError:
+            pass
+
