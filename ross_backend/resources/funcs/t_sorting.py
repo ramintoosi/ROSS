@@ -221,8 +221,6 @@ def t_dist_sorter(alignedSpikeMat, sdd):
         if L > L_max:
             L_max = L
             out['cluster_index'] = np.argmax(z, axis=1)
-
-            out['set.u'] = u
         else:
             break
 
