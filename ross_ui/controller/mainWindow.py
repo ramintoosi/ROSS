@@ -29,6 +29,7 @@ from controller.rawSelect import RawSelectApp as raw_form
 from controller.saveAs import SaveAsApp as save_as_form
 from controller.serverAddress import ServerApp as server_form
 from controller.serverFileDialog import ServerFileDialogApp as sever_dialog
+from controller.exportResults import ExportResultsApp as export_results
 from controller.signin import SigninApp as signin_form
 from view.mainWindow import MainWindow
 
@@ -89,10 +90,12 @@ class MainApp(MainWindow):
         self.undoManual.pressed.connect(self.onUndoManualSorting)
         self.resetManual.pressed.connect(self.onResetManualSorting)
         self.saveManual.pressed.connect(self.onSaveManualSorting)
+        self.saveManual.setEnabled(False)
         self.closeButton3d.pressed.connect(self.close3D)
         self.closeButton3dDet.pressed.connect(self.closeDetect3D)
         self.assign_close_button.pressed.connect(self.closeAssign)
         self.assign_button.pressed.connect(self.onAssignManualSorting)
+        self.exportAct.triggered.connect(self.open_export_dialog)
 
         # PCA MANUAL
         self.resetBottonPCAManual.clicked.connect(self.PCAManualResetButton)
@@ -351,7 +354,7 @@ class MainApp(MainWindow):
             # self.saveAsAct.setEnabled(True)
             self.importMenu.setEnabled(True)
             self.openAct.setEnabled(True)
-            self.exportMenu.setEnabled(True)
+            self.exportAct.setEnabled(True)
             self.runMenu.setEnabled(True)
             self.visMenu.setEnabled(True)
 
@@ -377,6 +380,26 @@ class MainApp(MainWindow):
             self.plot_histogram_pca.clear()
             self.plot_clusters_pca.clear()
             self.widget_waveform.clear()
+
+    @QtCore.pyqtSlot()
+    def open_export_dialog(self):
+        dialog = export_results(self.user)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            data_dict = dialog.data_dict
+            if dialog.checkSpikeTime:
+                data_dict['SpikeTime'] = self.spike_time
+            if dialog.checkClusters:
+                data_dict['Cluster'] = self.clusters
+
+            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Select Directory", f'./ross_result.{dialog.type}')[0]
+            if dialog.type == 'mat':
+                sio.savemat(filename, data_dict)
+            elif dialog.type == 'pickle':
+                with open(filename, 'wb') as f:
+                    pickle.dump(data_dict, f)
+            else:
+                QtWidgets.QMessageBox.critical(self, 'Error', 'Type not supported!')
+            QtWidgets.QMessageBox.information(self, 'Save', 'Saved Successfully!')
 
     def open_server_dialog(self):
         dialog = server_form(server_text=self.url)
@@ -438,7 +461,7 @@ class MainApp(MainWindow):
             # self.saveAct.setEnabled(False)
             # self.saveAsAct.setEnabled(False)
             self.importMenu.setEnabled(False)
-            self.exportMenu.setEnabled(False)
+            self.exportAct.setEnabled(False)
             self.runMenu.setEnabled(False)
             self.visMenu.setEnabled(False)
             self.widget_raw.clear()
@@ -973,8 +996,6 @@ class MainApp(MainWindow):
         """Perform checks in regular intervals."""
         self.mdiArea.checkTimestamps()
 
-
-
     def UpdatedClusterIndex(self):
         cl_ind = np.unique(self.clusters_tmp)
         cnt = 0
@@ -982,6 +1003,7 @@ class MainApp(MainWindow):
             if not ind == -1:
                 self.clusters_tmp[self.clusters_tmp == ind] = cnt
                 cnt += 1
+        self.onSaveManualSorting()
 
     def manualPreparingSorting(self, temp):
         if len(self.tempList) == 10:
@@ -1052,7 +1074,6 @@ class MainApp(MainWindow):
                 except:
                     print(traceback.format_exc())
 
-
             self.UpdatedClusterIndex()
             self.updateManualClusterList(self.clusters_tmp)
             if self.autoPlotManualCheck.isChecked():
@@ -1107,26 +1128,13 @@ class MainApp(MainWindow):
         self.saveManualFlag = False
 
     def onSaveManualSorting(self):
-        # if self.saveManualFlag:
         self.clusters = self.clusters_tmp.copy()
-        # self.number_of_clusters = np.shape(np.unique(self.clusters))[0]
         self.statusBar().showMessage(self.tr("Save Clustering Results..."))
         self.processEvents()
 
         res = self.user.save_sort_results(self.clusters)
-        if res['stat']:
-            self.processEvents()
-            self.statusBar().showMessage(self.tr("Updating Spikes Waveforms..."))
-            self.updateplotWaveForms(self.clusters)
-            self.processEvents()
-            self.statusBar().showMessage(self.tr("Updating Raw Data Waveforms..."), 2000)
-            self.updatePlotRaw()
-            self.processEvents()
-            self.statusBar().showMessage(self.tr("Saving Done."))
-        else:
+        if not res['stat']:
             self.statusBar().showMessage(self.tr("An error occurred in saving!..."), 2000)
-
-        self.saveManualFlag = False
 
     def onUndoManualSorting(self):
         try:
@@ -1371,7 +1379,6 @@ class MainApp(MainWindow):
             self.pca_spikes = res['pca_spikes']
             self.inds = res['inds']
             self.plotFlagHist = True
-
 
         # done
         res = self.user.get_sorting_result()

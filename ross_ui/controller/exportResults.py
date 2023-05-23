@@ -1,63 +1,35 @@
-import os
-
+from scipy.io import savemat
 from PyQt5 import QtWidgets
 
 from model.api import API
-from view.serverFileDialog import ServerFileDialog
+from view.exportResults import ExportResults
 
 
-class ServerFileDialogApp(ServerFileDialog):
+class ExportResultsApp(ExportResults):
     def __init__(self, api: API):
-        super(ServerFileDialogApp, self).__init__()
+        super().__init__()
         self.api = api
-        self.root = None
+        self.data_dict = {}
+        self.type = 'mat'
 
-        self.list_folder.itemDoubleClicked.connect(self.itemDoubleClicked)
-        self.push_open.clicked.connect(self.pushOpenClicked)
-        self.push_cancel.clicked.connect(self.reject)
+        self.pushExport.clicked.connect(self.pushExportClicked)
+        self.pushClose.clicked.connect(self.reject)
 
-        self.request_dir()
-
-    def request_dir(self):
-        self.list_folder.clear()
-        dir_dict = self.api.browse(self.root)
-        if dir_dict is not None:
-            self.line_address.setText(dir_dict['root'])
-
-            item = QtWidgets.QListWidgetItem('..')
-            item.setIcon(QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.SP_DirIcon))
-            self.list_folder.addItem(item)
-
-            for folder_name in dir_dict['folders']:
-                item = QtWidgets.QListWidgetItem(folder_name)
-                item.setIcon(QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.SP_DirIcon))
-                self.list_folder.addItem(item)
-            for filename in dir_dict['files']:
-                item = QtWidgets.QListWidgetItem(filename)
-                item.setIcon(QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.SP_FileIcon))
-                self.list_folder.addItem(item)
-        else:
-            QtWidgets.QMessageBox.critical(self, 'Error', 'Server Error')
-
-    def itemDoubleClicked(self, item: QtWidgets.QListWidgetItem):
-        name = item.text()
-        isfolder = item.icon().name() == 'folder'
-        if isfolder:
-            self.root = os.path.join(self.line_address.text(), name)
-            self.request_dir()
-        else:
-            ret = self.api.post_raw_data(raw_data_path=os.path.join(self.line_address.text(), name),
-                                         mode=1,
-                                         varname=self.line_varname.text())
-            if ret['stat']:
-                QtWidgets.QMessageBox.information(self, 'Info', 'File successfully added.')
-                self.accept()
+    def pushExportClicked(self):
+        if self.checkSpikeMat.isChecked():
+            self.labelDownload.setText('Download spike waveforms from server ...')
+            QtWidgets.QApplication.processEvents()
+            res = self.api.get_spike_mat()
+            if res['stat']:
+                self.labelDownload.setText('Download Done!')
+                QtWidgets.QApplication.processEvents()
+                self.data_dict['SpikeWaveform'] = res['spike_mat']
             else:
-                QtWidgets.QMessageBox.critical(self, 'Error', ret['message'])
+                self.labelDownload.setText('Download Error!')
+                QtWidgets.QMessageBox.critical(self, 'Error in Download', res['message'])
+        if self.radioMat.isChecked():
+            self.type = 'mat'
+        elif self.radioPickle.isChecked():
+            self.type = 'pickle'
 
-    def pushOpenClicked(self):
-        try:
-            self.itemDoubleClicked(self.list_folder.selectedItems()[0])
-        except IndexError:
-            pass
-
+        self.accept()

@@ -135,6 +135,27 @@ class API():
             return {'stat': False, 'message': response.content}
         return {'stat': False, 'message': 'Not Logged In!'}
 
+    def get_spike_mat(self):
+        if self.access_token is not None:
+            response = requests.get(self.url + '/detection_result_waveform',
+                                    headers={'Authorization': 'Bearer ' + self.access_token},
+                                    json={'project_id': self.project_id})
+
+            if response.ok:
+                b = io.BytesIO()
+                b.write(response.content)
+                b.seek(0)
+                d = np.load(b, allow_pickle=True)
+                return {'stat': True, 'spike_mat': d['spike_mat']}
+
+            elif response.status_code == 401:
+                ret = self.refresh_jwt_token()
+                if ret:
+                    self.get_spike_mat()
+
+            return {'stat': False, 'message': response.content}
+        return {'stat': False, 'message': 'Not Logged In!'}
+
     def get_sorting_result(self):
         if self.access_token is not None:
             response = requests.get(self.url + '/sorting_result',

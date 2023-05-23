@@ -12,7 +12,7 @@ from resources.project import Projects
 from resources.data import RawDataDefault
 from resources.detect import DetectDefault
 from resources.sorting_result import SortingResultDefault
-from resources.detection_result import DetectionResultDefault
+from resources.detection_result import DetectionResult, DetectionResultSpikeMat
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
 from resources.browse import Browse
 
@@ -88,14 +88,12 @@ api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
 api.add_resource(User, '/user/<int:user_id>')
 
-# api.add_resource(RawData, '/raw/<string:name>')
 api.add_resource(RawDataDefault, '/raw')
 api.add_resource(DetectDefault, '/detect')
-# api.add_resource(Detect, '/detect/<string:name>')
 api.add_resource(SortDefault, '/sort')
-# api.add_resource(Sort, '/sort/<string:name>')
 
-api.add_resource(DetectionResultDefault, '/detection_result')
+api.add_resource(DetectionResult, '/detection_result')
+api.add_resource(DetectionResultSpikeMat, '/detection_result_waveform')
 api.add_resource(SortingResultDefault, '/sorting_result')
 
 api.add_resource(Projects, '/projects')

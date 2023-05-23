@@ -71,6 +71,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.closeAct.setIcon(QtGui.QIcon(icon_path + "Close.png"))
         self.closeAct.setEnabled(False)
 
+        self.exportAct = QtWidgets.QAction(self.tr("&Export"), self)
+        self.exportAct.setStatusTip(self.tr("Export results"))
+        self.exportAct.setIcon(QtGui.QIcon(icon_path + "Export.png"))
+        self.exportAct.setEnabled(False)
+
+
         self.saveAct = QtWidgets.QAction(self.tr("&Save"), self)
         self.saveAct.setEnabled(False)
         self.saveAct.setShortcut(QtGui.QKeySequence.Save)
@@ -340,18 +346,23 @@ class MainWindow(QtWidgets.QMainWindow):
         # Menu entry for file actions.
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"))
         # self.fileMenu.addAction(self.openAct)
-        self.fileMenu.addAction(self.closeAct)
-        self.fileMenu.addSeparator()
-        self.fileMenu.addAction(self.saveAct)
-        self.fileMenu.addAction(self.saveAsAct)
-        self.fileMenu.addSeparator()
+
+        # self.fileMenu.addSeparator()
+        # self.fileMenu.addAction(self.saveAct)
+        # self.fileMenu.addAction(self.saveAsAct)
+        # self.fileMenu.addSeparator()
         self.importMenu = self.fileMenu.addMenu(self.tr("&Import"))
         self.importMenu.setEnabled(False)
         self.importMenu.addActions(
             (self.importRawAct, self.importRawActServer, self.importDetectedAct, self.importSortedAct))
-        self.exportMenu = self.fileMenu.addMenu(self.tr("&Export"))
-        self.exportMenu.setEnabled(False)
-        self.exportMenu.addActions((self.exportRawAct, self.exportDetectedAct, self.exportSortedAct))
+
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.exportAct)
+        self.fileMenu.addAction(self.closeAct)
+
+        # self.exportMenu = self.fileMenu.addMenu(self.tr("&Export"))
+        # self.exportMenu.setEnabled(False)
+        # self.exportMenu.addActions((self.exportRawAct, self.exportDetectedAct, self.exportSortedAct))
 
         # ------------------- tool from menu ------------------
         # Menu entry for tool acions

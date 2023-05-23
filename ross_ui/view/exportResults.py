@@ -1,14 +1,13 @@
 from PyQt5 import QtWidgets
 
 
-class ExportView(QtWidgets.QDialog):
+class ExportResults(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
         self.setFixedSize(600, 300)
 
         layout_out = QtWidgets.QVBoxLayout()
         groupbox = QtWidgets.QGroupBox("Export variables")
-        groupbox.setCheckable(True)
 
         vbox = QtWidgets.QVBoxLayout()
         groupbox.setLayout(vbox)
@@ -24,15 +23,34 @@ class ExportView(QtWidgets.QDialog):
         vbox.addWidget(self.checkSpikeTime)
         vbox.addWidget(self.checkClusters)
 
-        hbox = QtWidgets.QHBoxLayout()
+        groupboxradio = QtWidgets.QGroupBox("Export type")
+
+        hboxradio = QtWidgets.QHBoxLayout()
+
+        groupboxradio.setLayout(hboxradio)
+
+        self.radioPickle = QtWidgets.QRadioButton("pickle")
+        self.radioMat = QtWidgets.QRadioButton("mat")
+
+        self.radioPickle.setChecked(True)
+
+        hboxradio.addWidget(self.radioPickle)
+        hboxradio.addWidget(self.radioMat)
+
+        hboxpush = QtWidgets.QHBoxLayout()
         self.pushExport = QtWidgets.QPushButton("Export")
         self.pushClose = QtWidgets.QPushButton("Close")
 
-        hbox.addWidget(self.pushExport)
-        hbox.addWidget(self.pushClose)
+        hboxpush.addWidget(self.pushExport)
+        hboxpush.addWidget(self.pushClose)
+        self.labelDownload = QtWidgets.QLabel()
+        self.progbar = QtWidgets.QProgressBar()
 
-        layout_out.addLayout(vbox)
-        layout_out.addLayout(hbox)
+        layout_out.addWidget(groupbox)
+        layout_out.addWidget(groupboxradio)
+        layout_out.addWidget(self.labelDownload)
+        # layout_out.addWidget(self.progbar)
+        layout_out.addLayout(hboxpush)
 
         self.setLayout(layout_out)
 
