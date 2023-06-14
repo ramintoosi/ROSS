@@ -2,6 +2,8 @@
 
 ![image](./images/Ross_Color.png)
 
+![example workflow](https://github.com/ramintoosi/ROSS/actions/workflows/ross-test.yml/badge.svg)
+
 ROSS v2 (beta) is the Python version of offline spike sorting software implemented based on the methods described in the
 paper
 entitled [An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions](https://www.nature.com/articles/s41598-021-93088-w). (
