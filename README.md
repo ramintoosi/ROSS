@@ -2,7 +2,7 @@
 
 ![image](./images/Ross_Color.png)
 
-![example workflow](https://github.com/ramintoosi/ROSS/actions/workflows/ross-test.yml/badge.svg)
+![ROSS Test](https://github.com/ramintoosi/ROSS/actions/workflows/ross-test.yml/badge.svg)
 
 ROSS v2 (beta) is the Python version of offline spike sorting software implemented based on the methods described in the
 paper
