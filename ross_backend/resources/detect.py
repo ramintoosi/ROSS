@@ -70,7 +70,20 @@ class DetectDefault(Resource):
         # if data['run_detection']:
         try:
 
-            spikeMat, spikeTime, pca_spikes, inds = startDetection(project_id)
+            raw = RawModel.find_by_project_id(project_id)
+
+            if not raw:
+                return {'message': 'No raw file'}, 404
+            config = ConfigDetectionModel.find_by_project_id(project_id)
+            if not config:
+                return {'message': 'Detection config does not exist'}, 404
+            if not raw.data:
+                return {'message': 'raw file has no data'}, 404
+
+            with open(raw.data, 'rb') as f:
+                data = pickle.load(f)
+
+            spikeMat, spikeTime, pca_spikes, inds = startDetection(data, config)
 
             data_file = {'spikeMat': spikeMat, 'spikeTime': spikeTime,
                          'config': config.json(), 'pca_spikes': pca_spikes,

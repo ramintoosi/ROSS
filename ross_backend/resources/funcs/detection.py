@@ -10,30 +10,7 @@ from models.config import ConfigDetectionModel
 from models.data import RawModel
 
 
-def startDetection(project_id):
-    raw = RawModel.find_by_project_id(project_id)
-
-    if not raw:
-        raise Exception
-    config = ConfigDetectionModel.find_by_project_id(project_id)
-    if not config:
-        raise Exception
-    if not raw.data:
-        raise Exception
-
-    # print("raw.data", raw.data)
-    # b = io.BytesIO()
-    # b.write(raw.data)
-    # b.seek(0)
-    # d = np.load(b, allow_pickle=True)
-    # data_address = d['raw']
-
-    with open(raw.data, 'rb') as f:
-        new_data = pickle.load(f)
-        data = new_data
-
-    # b.close()
-
+def startDetection(data, config):
     thr_method = config.thr_method
     fRp = config.pass_freq
     fRs = config.stop_freq
@@ -127,7 +104,7 @@ def spike_detector(data, thr, pre_thresh, post_thresh, dead_time, side):
     indx_spikes = np.nonzero(spike_detected)[0]
 
     SpikeMat = np.zeros((len(indx_spikes), n_points_per_spike))
-    SpikeTime = np.zeros((len(indx_spikes), ), dtype=np.uint32)
+    SpikeTime = np.zeros((len(indx_spikes),), dtype=np.uint32)
 
     # assigning SpikeMat and SpikeTime matrices
     for i, curr_indx in enumerate(indx_spikes):
