@@ -76,7 +76,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.exportAct.setIcon(QtGui.QIcon(icon_path + "Export.png"))
         self.exportAct.setEnabled(False)
 
-
         self.saveAct = QtWidgets.QAction(self.tr("&Save"), self)
         self.saveAct.setEnabled(False)
         self.saveAct.setShortcut(QtGui.QKeySequence.Save)

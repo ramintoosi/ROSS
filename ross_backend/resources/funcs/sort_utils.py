@@ -141,7 +141,7 @@ def spike_alignment(spike_mat, spike_time, ss):
     newSpikeMat = spike_mat[:, max_shift:-max_shift]
 
     # shifting time with the amount of "max_shift" because first "max_shift" samples are ignored.
-    time_shift = np.zeros((n_spike, )) + max_shift
+    time_shift = np.zeros((n_spike,)) + max_shift
 
     # indices of neg group
     ind_neg_find = np.nonzero(ind_neg)[0]

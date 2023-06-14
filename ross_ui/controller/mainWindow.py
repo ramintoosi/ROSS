@@ -22,6 +22,7 @@ from sklearn.neighbors import NearestNeighbors
 
 from controller.detectedMatSelect import DetectedMatSelectApp as detected_mat_form
 from controller.detectedTimeSelect import DetectedTimeSelectApp as detected_time_form
+from controller.exportResults import ExportResultsApp as export_results
 from controller.hdf5 import HDF5Plot
 from controller.matplot_figures import MatPlotFigures
 from controller.projectSelect import projectSelectApp as project_form
@@ -29,7 +30,6 @@ from controller.rawSelect import RawSelectApp as raw_form
 from controller.saveAs import SaveAsApp as save_as_form
 from controller.serverAddress import ServerApp as server_form
 from controller.serverFileDialog import ServerFileDialogApp as sever_dialog
-from controller.exportResults import ExportResultsApp as export_results
 from controller.signin import SigninApp as signin_form
 from view.mainWindow import MainWindow
 
@@ -391,7 +391,8 @@ class MainApp(MainWindow):
             if dialog.checkClusters:
                 data_dict['Cluster'] = self.clusters
 
-            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Select Directory", f'./ross_result.{dialog.type}')[0]
+            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Select Directory", f'./ross_result.{dialog.type}')[
+                0]
             if dialog.type == 'mat':
                 sio.savemat(filename, data_dict)
             elif dialog.type == 'pickle':

@@ -9,8 +9,8 @@ from flask_restful import Resource, reqparse, request
 from models.config import ConfigDetectionModel
 from models.data import DetectResultModel
 from models.data import RawModel
-from resources.funcs.detection import startDetection
 from resources.detection_result import SESSION
+from resources.funcs.detection import startDetection
 
 
 class DetectDefault(Resource):

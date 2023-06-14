@@ -1,4 +1,3 @@
-from scipy.io import savemat
 from PyQt5 import QtWidgets
 
 from model.api import API

@@ -7,6 +7,7 @@ class ProjectModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete="CASCADE"))
+
     # config_detect = db.relationship('ConfigDetectionModel', backref='project', uselist=False,
     #                                 cascade="all,delete,delete-orphan")
     # config_sort = db.relationship('ConfigSortModel', backref='project', uselist=False,

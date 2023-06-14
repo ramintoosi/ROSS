@@ -1,13 +1,9 @@
-import pickle
 import random
 
 import numpy as np
 import pyyawt
 import scipy.signal
 import sklearn.decomposition as decom
-
-from models.config import ConfigDetectionModel
-from models.data import RawModel
 
 
 def startDetection(data, config):

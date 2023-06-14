@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 
 
 class Signin_Dialog(QtWidgets.QDialog):

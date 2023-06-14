@@ -1,8 +1,8 @@
 import io
 import os.path
 import pickle
-from uuid import uuid4
 from pathlib import Path
+from uuid import uuid4
 
 import flask
 import numpy as np

@@ -10,4 +10,4 @@ class MatPlotFigures:
         self.axes = []
         nrows = math.ceil(number_of_clusters / 3)
         for i in range(number_of_clusters):
-            self.axes.append(fig.add_subplot(nrows, 3, i+1))
+            self.axes.append(fig.add_subplot(nrows, 3, i + 1))

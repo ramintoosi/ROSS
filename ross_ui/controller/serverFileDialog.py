@@ -60,4 +60,3 @@ class ServerFileDialogApp(ServerFileDialog):
             self.itemDoubleClicked(self.list_folder.selectedItems()[0])
         except IndexError:
             pass
-

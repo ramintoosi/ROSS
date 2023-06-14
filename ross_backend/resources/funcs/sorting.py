@@ -1,5 +1,4 @@
 import pickle
-from typing import Iterable
 
 from models.config import ConfigSortModel
 from models.data import DetectResultModel
@@ -13,7 +12,7 @@ from resources.funcs.t_sorting import *
 def create_cluster_time_vec(spike_time: np.ndarray, clusters, config: dict):
     cluster_time_vec = np.zeros(spike_time[-1] + config['post_thr'], dtype=np.int8)
     for i, t in enumerate(spike_time):
-        cluster_time_vec[t - config['pre_thr']: t + config['post_thr']] = clusters[i]+1
+        cluster_time_vec[t - config['pre_thr']: t + config['post_thr']] = clusters[i] + 1
     return cluster_time_vec
 
 
