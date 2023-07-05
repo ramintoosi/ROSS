@@ -2,15 +2,19 @@
 
 ROSS is an offline spike sorting software implemented based on the methods described in the paper entitled [An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions](https://www.nature.com/articles/s41598-021-93088-w). (Official Implementation)
 
+## ROSS V2 Python
+Looking for the Python version? check [ROSS V2](https://github.com/ramintoosi/ROSS/tree/v2)
+
 ## Updates:
-- **7 January 2023:** Importing .csv files is available on ROSS V2 
+- **5 July 2023:** ROSS v2 (pre-release) is here! [Click Here!](https://github.com/ramintoosi/ROSS/tree/v2)
+- **7 January 2023:** Importing .pkl files is available on ROSS V2 
 - **1 January 2023:** ROSS v2 (beta) is Released! [Click Here!](https://github.com/ramintoosi/ROSS/tree/v2)
 - **28 September 2021:** We are developing ROSS v2 based on **Python** with new features.
 - **06 July 2021:** Our paper is accepted at **Scientific Reports** and is now publicly available (**Open Access**) at [this link](https://www.nature.com/articles/s41598-021-93088-w).
 
 ## Introduction
-Neural activity monitoring is one of the bases of understanding the brain behavior. The recorded extracellular potential is a combination of multiple neurons activities corrupted by noise. A main step in analyzing the extracellular data is to differentiate among different neuron activities. Spike sorting is the process of assigning each detected spike to the corresponding neurons.
-ROSS is a MATLAB based offline spike sorter software which helps the researchers to do automatic and manual spike sorting tasks efficiently. Currently it provides [t-distribution](https://www.sciencedirect.com/science/article/pii/S0165027003001201) and skew-t based methods for automatic spike sorting. Several functions are considered for modifying the auto-sorting results, such as merging and denoising. Also, useful visualizations are provided to get better results.
+Neural activity monitoring is one of the bases of understanding brain behavior. The recorded extracellular potential is a combination of multiple neuron activities corrupted by noise. The main step in analyzing the extracellular data is to differentiate among different neuron activities. Spike sorting is the process of assigning each detected spike to the corresponding neurons.
+ROSS is a MATLAB-based offline spike sorter software that helps researchers to do automatic and manual spike sorting tasks efficiently. Currently, it provides [t-distribution](https://www.sciencedirect.com/science/article/pii/S0165027003001201) and skew-t based methods for automatic spike sorting. Several functions are considered for modifying the auto-sorting results, such as merging and denoising. Also, useful visualizations are provided to get better results.
 
 ## Python Version
 ROSS v2 is based on Python. Check it out [here](https://github.com/ramintoosi/ROSS/tree/v2).
@@ -23,12 +27,12 @@ Recommended System
 
 - 12GB RAM
 
-Download the package to a local folder. Run matlab and navigate to the folder. Then you could easily start Offline Spike Sorter by running “ross.mlapp” or **typing “ross” in the command window**.
+Download the package to a local folder. Run Matlab and navigate to the folder. Then you could easily start Offline Spike Sorter by running “ross.mlapp” or **typing “ross” in the command window**.
 
 
 ## Usage
 
-ROSS provides useful tools for spike detection, automatic sorting and manual sorting. 
+ROSS provides useful tools for spike detection, automatic sorting, and manual sorting. 
 
 - Detection
 
