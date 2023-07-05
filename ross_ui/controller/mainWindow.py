@@ -1,48 +1,41 @@
 import os
+import pathlib
 import pickle
 import random
-import time
 import traceback
 from uuid import uuid4
-import enum
-import pathlib
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pyqtgraph
 import pyqtgraph.exporters
 import pyqtgraph.opengl as gl
 import scipy.io as sio
 import scipy.stats as stats
-import sklearn.decomposition as decom
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtGui import QPixmap, QTransform, QColor, QIcon
 from colour import Color
 from nptdms import TdmsFile
 from shapely.geometry import Point, Polygon
 from sklearn.neighbors import NearestNeighbors
-import pandas as pd
 
 from controller.detectedMatSelect import DetectedMatSelectApp as detected_mat_form
 from controller.detectedTimeSelect import DetectedTimeSelectApp as detected_time_form
+from controller.exportResults import ExportResultsApp as export_results
 from controller.hdf5 import HDF5Plot
 from controller.matplot_figures import MatPlotFigures
-from controller.multicolor_curve import MultiColoredCurve
 from controller.projectSelect import projectSelectApp as project_form
 from controller.rawSelect import RawSelectApp as raw_form
 from controller.saveAs import SaveAsApp as save_as_form
-from controller.segmented_time import SegmentedTime
 from controller.serverAddress import ServerApp as server_form
+from controller.serverFileDialog import ServerFileDialogApp as sever_dialog
 from controller.signin import SigninApp as signin_form
 from view.mainWindow import MainWindow
 
 icon_path = './view/icons/'
 
-
-class softwareMode(enum.Enum):
-    SAME_PALACE = 0
-    CLIENT_SIDE = 1
-    SERVER_SIDE = 2
+os.makedirs('.tmp', exist_ok=True)
 
 
 class MainApp(MainWindow):
@@ -52,7 +45,9 @@ class MainApp(MainWindow):
         self.setWindowIcon(QtGui.QIcon('view/icons/ross.png'))
 
         # initial values for software options
-        self.plotHistFlag = False
+        # self.plotHistFlag = False
+        self.plotFlagHist = False
+        self.plotFlagClusterBased = False
         self.pca_manual = None
         self.image = None
         self.pca_spikes = None
@@ -60,13 +55,15 @@ class MainApp(MainWindow):
         self.clusters_tmp = None
         self.clusters_init = None
         self.clusters = None
-        self.colors = None
+        self.inds = None
+        self.colors = self.distinctColors(127)
 
-        self.url = 'http://127.0.0.1:5000'
+        self.url = 'http://localhost:5000'
 
         self.raw = None
         self.spike_mat = None
         self.spike_time = None
+        self.cluster_time_vec = None
 
         self.Raw_data_path = os.path.join(pathlib.Path(__file__).parent, '../ross_data/Raw_Data')
         self.pca_path = os.path.join(pathlib.Path(__file__).parent, '../ross_data/pca_images')
@@ -81,26 +78,76 @@ class MainApp(MainWindow):
         self.plotManualFlag = False
         self.resetManualFlag = False
         self.undoManualFlag = False
-        self.mode = softwareMode.SAME_PALACE
         self.tempList = []
+
+        self.processEvents = QtWidgets.QApplication.processEvents
 
         self.startDetection.pressed.connect(self.onDetect)
         self.startSorting.pressed.connect(self.onSort)
         self.plotButton.pressed.connect(self.Plot3d)
         self.actManual.pressed.connect(self.onActManualSorting)
-        self.plotManual.pressed.connect(self.onPlotManualSorting)
+        self.plotManual.pressed.connect(self.updateFigures)
         self.undoManual.pressed.connect(self.onUndoManualSorting)
         self.resetManual.pressed.connect(self.onResetManualSorting)
         self.saveManual.pressed.connect(self.onSaveManualSorting)
+        self.saveManual.setEnabled(False)
         self.closeButton3d.pressed.connect(self.close3D)
         self.closeButton3dDet.pressed.connect(self.closeDetect3D)
         self.assign_close_button.pressed.connect(self.closeAssign)
         self.assign_button.pressed.connect(self.onAssignManualSorting)
+        self.exportAct.triggered.connect(self.open_export_dialog)
 
         # PCA MANUAL
         self.resetBottonPCAManual.clicked.connect(self.PCAManualResetButton)
         self.closeBottonPCAManual.clicked.connect(self.PCAManualCloseButton)
         self.doneBottonPCAManual.clicked.connect(self.PCAManualDoneButton)
+
+    def resetOnSignOutVars(self):
+
+        self.raw = None
+        self.spike_mat = None
+        self.spike_time = None
+        self.user_name = None
+        self.user = None
+        self.image = None
+        self.pca_spikes = None
+        self.number_of_clusters = None
+        self.clusters_tmp = None
+        self.clusters_init = None
+        self.clusters = None
+        self.cluster_time_vec = None
+
+        self.user = None
+        self.user_name = None
+        self.current_project = None
+
+        self.saveManualFlag = False
+        self.plotManualFlag = False
+        self.resetManualFlag = False
+        self.undoManualFlag = False
+
+        self.tempList = []
+
+    def resetOnImportVars(self):
+
+        # initial values for software options
+        self.pca_manual = None
+        self.image = None
+        self.pca_spikes = None
+        self.number_of_clusters = None
+        self.clusters_tmp = None
+        self.clusters_init = None
+        self.clusters = None
+
+        self.spike_mat = None
+        self.spike_time = None
+        self.cluster_time_vec = None
+
+        self.saveManualFlag = False
+        self.plotManualFlag = False
+        self.resetManualFlag = False
+        self.undoManualFlag = False
+        self.tempList = []
 
     def onUserAccount(self):
         if self.user is None:
@@ -110,17 +157,17 @@ class MainApp(MainWindow):
         filename, filetype = QtWidgets.QFileDialog.getOpenFileName(self,
                                                                    self.tr("Open file"),
                                                                    os.getcwd(),
-                                                                   self.tr("Raw Files(*.mat *.csv *.tdms)")
+                                                                   self.tr("Raw Files(*.mat *.pkl)")
                                                                    )
 
         if not filename:
-            return FileNotFoundError('you should select a file')
+            raise FileNotFoundError('you should select a file')
 
         if not os.path.isfile(filename):
             raise FileNotFoundError(filename)
 
         self.statusBar().showMessage(self.tr("Loading..."))
-        self.wait()
+        self.processEvents()
         file_extension = os.path.splitext(filename)[-1]
         if file_extension == '.mat':
             file_raw = sio.loadmat(filename)
@@ -137,60 +184,83 @@ class MainApp(MainWindow):
             else:
                 variable = variables[0]
 
+            # nd.array with shape (N,)
             temp = file_raw[variable].flatten()
 
-            self.raw = temp
+        elif file_extension == '.pkl':
+            with open(filename, 'rb') as f:
+                file_raw = pickle.load(f)
 
-            # ------------------ save raw data as pkl file in data_set folder ---------------------------------------
-            address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
-
-            with open(address, 'wb') as f:
-                pickle.dump(temp, f)
-            # -----------------------------------------------------------------------------------------------------
-
-        elif file_extension == '.csv':
-            df = pd.read_csv(filename, skiprows=1)
-            temp = df.to_numpy()
-            address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
-            self.raw = temp
-            with open(address, 'wb') as f:
-                pickle.dump(temp, f)
-        elif file_extension == '.tdms':
-            tdms_file = TdmsFile.read(filename)
-            i = 0
-            for group in tdms_file.groups():
-                df = tdms_file.object(group).as_dataframe()
-                variables = list(df.keys())
-                i = i + 1
+            variables = list(file_raw.keys())
 
             if len(variables) > 1:
                 variable = self.open_raw_dialog(variables)
                 if not variable:
-                    self.statusBar().showMessage('')
+                    self.statusBar().showMessage(self.tr("Nothing selected"))
                     return
             else:
                 variable = variables[0]
-            # group = tdms_file['group name']
-            # channel = group['channel name']
-            # channel_data = channel[:]
-            # channel_properties = channel.properties
-            temp = np.array(df[variable]).flatten()
-            self.raw = temp
 
-            address = os.path.join(self.Raw_data_path, os.path.split(filename)[-1][:-5] + '.pkl')
-            with open(address, 'wb') as f:
-                pickle.dump(temp, f)
+            # nd.array with shape (N,)
+            temp = np.array(file_raw[variable]).flatten()
+
+        # elif file_extension == '.csv':
+        #     df = pd.read_csv(filename, skiprows=1)
+        #     temp = df.to_numpy()
+        #     address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
+        #     self.raw = temp
+        #     with open(address, 'wb') as f:
+        #         pickle.dump(temp, f)
+        # elif file_extension == '.tdms':
+        #     tdms_file = TdmsFile.read(filename)
+        #     i = 0
+        #     for group in tdms_file.groups():
+        #         df = tdms_file.object(group).as_dataframe()
+        #         variables = list(df.keys())
+        #         i = i + 1
+        #
+        #     if len(variables) > 1:
+        #         variable = self.open_raw_dialog(variables)
+        #         if not variable:
+        #             self.statusBar().showMessage('')
+        #             return
+        #     else:
+        #         variable = variables[0]
+        #     # group = tdms_file['group name']
+        #     # channel = group['channel name']
+        #     # channel_data = channel[:]
+        #     # channel_properties = channel.properties
+        #     temp = np.array(df[variable]).flatten()
+        #     self.raw = temp
+        #
+        #     address = os.path.join(self.Raw_data_path, os.path.split(filename)[-1][:-5] + '.pkl')
+        #     with open(address, 'wb') as f:
+        #         pickle.dump(temp, f)
 
         else:
-            raise TypeError(f'File type {file_extension} is not supported!')
+            QtWidgets.QMessageBox.critical(self, 'Error', 'Type is not supported')
+            return
+
+        # check tmp
+        if temp.ndim != 1:
+            QtWidgets.QMessageBox.critical(self, 'Error', 'Variable must be a vector')
+            return
+
+        self.raw = temp
+        address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
+
+        with open(address, 'wb') as f:
+            pickle.dump(temp, f)
 
         self.refreshAct.setEnabled(True)
         self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
-        self.wait()
+        self.processEvents()
 
         self.statusBar().showMessage(self.tr("Plotting..."), 2500)
-        self.wait()
+        self.processEvents()
         self.plotRaw()
+
+        self.resetOnImportVars()
 
         self.plot_histogram_pca.clear()
         self.plot_clusters_pca.clear()
@@ -198,84 +268,85 @@ class MainApp(MainWindow):
 
         if self.user:
             self.statusBar().showMessage(self.tr("Uploading to server..."))
-            self.wait()
+            self.processEvents()
 
             res = self.user.post_raw_data(address)
             if res['stat']:
                 self.statusBar().showMessage(self.tr("Uploaded"), 2500)
-                self.wait()
+                self.processEvents()
             else:
-                self.wait()
+                self.processEvents()
 
     def onImportDetected(self):
-        filename, filetype = QtWidgets.QFileDialog.getOpenFileName(self, self.tr("Open file"), os.getcwd(),
-                                                                   self.tr("Detected Spikes Files(*.mat *.csv *.tdms)"))
-
-        if not filename:
-            return FileNotFoundError('you should select a file')
-
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(filename)
-
-        self.statusBar().showMessage(self.tr("Loading..."))
-        self.wait()
-        file_extension = os.path.splitext(filename)[-1]
-        if file_extension == '.mat':
-            file_raw = sio.loadmat(filename)
-            variables = list(file_raw.keys())
-            if '__version__' in variables:
-                variables.remove('__version__')
-            if '__header__' in variables:
-                variables.remove('__header__')
-            if '__globals__' in variables:
-                variables.remove('__globals__')
-
-            if len(variables) > 1:
-                variable1 = self.open_detected_mat_dialog(variables)
-                # self.wait()
-                if not variable1:
-                    self.statusBar().showMessage(self.tr(" "))
-                    return
-                variable2 = self.open_detected_time_dialog(variables)
-                if not variable2:
-                    self.statusBar().showMessage(self.tr(" "))
-                    return
-            else:
-                return
-
-            temp = file_raw[variable1].flatten()
-            self.spike_mat = temp
-
-            temp = file_raw[variable2].flatten()
-            self.spike_time = temp
-
-        elif file_extension == '.csv':
-            pass
-
-        else:
-            pass
-
-        self.refreshAct.setEnabled(True)
-        self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
-        self.wait()
-
-        self.statusBar().showMessage(self.tr("Plotting..."), 2500)
-        self.wait()
-        self.plotWaveForms()
-        self.plotDetectionResult()
-        self.plotPcaResult()
-
-        if self.user:
-            self.statusBar().showMessage(self.tr("Uploading to server..."))
-            self.wait()
-
-            res = self.user.post_detected_data(self.spike_mat, self.spike_time)
-
-            if res['stat']:
-                self.statusBar().showMessage(self.tr("Uploaded"), 2500)
-                self.wait()
-            else:
-                self.wait()
+        pass
+        # filename, filetype = QtWidgets.QFileDialog.getOpenFileName(self, self.tr("Open file"), os.getcwd(),
+        #                                                            self.tr("Detected Spikes Files(*.mat *.csv *.tdms)"))
+        #
+        # if not filename:
+        #     return FileNotFoundError('you should select a file')
+        #
+        # if not os.path.isfile(filename):
+        #     raise FileNotFoundError(filename)
+        #
+        # self.statusBar().showMessage(self.tr("Loading..."))
+        # self.wait()
+        # file_extension = os.path.splitext(filename)[-1]
+        # if file_extension == '.mat':
+        #     file_raw = sio.loadmat(filename)
+        #     variables = list(file_raw.keys())
+        #     if '__version__' in variables:
+        #         variables.remove('__version__')
+        #     if '__header__' in variables:
+        #         variables.remove('__header__')
+        #     if '__globals__' in variables:
+        #         variables.remove('__globals__')
+        #
+        #     if len(variables) > 1:
+        #         variable1 = self.open_detected_mat_dialog(variables)
+        #         # self.wait()
+        #         if not variable1:
+        #             self.statusBar().showMessage(self.tr(" "))
+        #             return
+        #         variable2 = self.open_detected_time_dialog(variables)
+        #         if not variable2:
+        #             self.statusBar().showMessage(self.tr(" "))
+        #             return
+        #     else:
+        #         return
+        #
+        #     temp = file_raw[variable1].flatten()
+        #     self.spike_mat = temp
+        #
+        #     temp = file_raw[variable2].flatten()
+        #     self.spike_time = temp
+        #
+        # elif file_extension == '.csv':
+        #     pass
+        #
+        # else:
+        #     pass
+        #
+        # self.refreshAct.setEnabled(True)
+        # self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
+        # self.wait()
+        #
+        # self.statusBar().showMessage(self.tr("Plotting..."), 2500)
+        # self.wait()
+        # self.plotWaveForms()
+        # self.plotDetectionResult()
+        # self.plotPcaResult()
+        #
+        # if self.user:
+        #     self.statusBar().showMessage(self.tr("Uploading to server..."))
+        #     self.wait()
+        #
+        #     res = self.user.post_detected_data(self.spike_mat, self.spike_time)
+        #
+        #     if res['stat']:
+        #         self.statusBar().showMessage(self.tr("Uploaded"), 2500)
+        #         self.wait()
+        #     else:
+        #         self.wait()
 
     def onImportSorted(self):
         pass
@@ -299,14 +370,57 @@ class MainApp(MainWindow):
             self.accountButton.setStatusTip("Signed In")
             self.logInAct.setEnabled(False)
             self.logOutAct.setEnabled(True)
-            self.saveAsAct.setEnabled(True)
+            # self.saveAct.setEnabled(True)
+            # self.saveAsAct.setEnabled(True)
+            self.importMenu.setEnabled(True)
             self.openAct.setEnabled(True)
+            self.exportAct.setEnabled(True)
+            self.runMenu.setEnabled(True)
+            self.visMenu.setEnabled(True)
 
             self.statusBar().showMessage(self.tr("Loading Data..."))
             #  self.wait()
             self.loadDefaultProject()
             self.statusBar().showMessage(self.tr("Loaded."), 2500)
-            self.saveAct.setEnabled(True)
+
+    @QtCore.pyqtSlot()
+    def open_file_dialog_server(self):
+        dialog = sever_dialog(self.user)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.refreshAct.setEnabled(True)
+            self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
+            self.processEvents()
+
+            self.statusBar().showMessage(self.tr("Plotting..."), 2500)
+            self.processEvents()
+            self.plotRaw()
+
+            self.resetOnImportVars()
+
+            self.plot_histogram_pca.clear()
+            self.plot_clusters_pca.clear()
+            self.widget_waveform.clear()
+
+    @QtCore.pyqtSlot()
+    def open_export_dialog(self):
+        dialog = export_results(self.user)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            data_dict = dialog.data_dict
+            if dialog.checkSpikeTime:
+                data_dict['SpikeTime'] = self.spike_time
+            if dialog.checkClusters:
+                data_dict['Cluster'] = self.clusters
+
+            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Select Directory", f'./ross_result.{dialog.type}')[
+                0]
+            if dialog.type == 'mat':
+                sio.savemat(filename, data_dict)
+            elif dialog.type == 'pickle':
+                with open(filename, 'wb') as f:
+                    pickle.dump(data_dict, f)
+            else:
+                QtWidgets.QMessageBox.critical(self, 'Error', 'Type not supported!')
+            QtWidgets.QMessageBox.information(self, 'Save', 'Saved Successfully!')
 
     def open_server_dialog(self):
         dialog = server_form(server_text=self.url)
@@ -336,7 +450,7 @@ class MainApp(MainWindow):
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             self.current_project = dialog.comboBox.currentText()
             self.statusBar().showMessage(self.tr("Loading project..."))
-            self.wait()
+            self.processEvents()
             self.user.load_project(self.current_project)
             self.loadDefaultProject()
             self.statusBar().showMessage(self.tr("Loaded."), 2500)
@@ -357,19 +471,20 @@ class MainApp(MainWindow):
     def onSignOut(self):
         res = self.user.sign_out()
         if res['stat']:
-            self.raw = None
-            self.spike_mat = None
-            self.spike_time = None
-            self.user_name = None
+            self.resetOnSignOutVars()
+
             self.accountButton.setIcon(QtGui.QIcon(icon_path + "unverified.png"))
             self.accountButton.setMenu(None)
             self.accountButton.setText('')
             self.accountButton.setStatusTip("Sign In/Up")
             self.logInAct.setEnabled(True)
             self.logOutAct.setEnabled(False)
-            self.user = None
-            self.saveAct.setEnabled(False)
-            self.saveAsAct.setEnabled(False)
+            # self.saveAct.setEnabled(False)
+            # self.saveAsAct.setEnabled(False)
+            self.importMenu.setEnabled(False)
+            self.exportAct.setEnabled(False)
+            self.runMenu.setEnabled(False)
+            self.visMenu.setEnabled(False)
             self.widget_raw.clear()
             self.plot_histogram_pca.clear()
             self.plot_clusters_pca.clear()
@@ -387,7 +502,7 @@ class MainApp(MainWindow):
 
     def onSave(self):
         self.statusBar().showMessage(self.tr("Saving..."))
-        self.wait()
+        self.processEvents()
         res = self.user.save_project(self.current_project)
         if res['stat']:
             self.statusBar().showMessage(self.tr("Saved."), 2500)
@@ -401,7 +516,7 @@ class MainApp(MainWindow):
             return
         config_detect = self.read_config_detect()
         self.statusBar().showMessage(self.tr("Detection Started..."))
-        self.wait()
+        self.processEvents()
         res = self.user.start_detection(config_detect)
 
         if res['stat']:
@@ -410,30 +525,23 @@ class MainApp(MainWindow):
             if res['stat']:
                 self.spike_mat = res['spike_mat']
                 self.spike_time = res['spike_time']
+                self.pca_spikes = res['pca_spikes']
+                self.inds = res['inds']
                 self.statusBar().showMessage(self.tr("Plotting..."), 2500)
-                self.wait()
-                self.plotDetectionResult()
-                self.plotPcaResult()
+                self.processEvents()
+                self.plotHistogramPCA()
+                self.plotPCA2D()
                 self.plotWaveForms()
 
     def manualResort(self, selected_clusters):
         config_sort = self.read_config_sort()
         self.statusBar().showMessage(self.tr("Manual ReSorting Started..."))
-        self.wait()
+        self.processEvents()
 
         res = self.user.start_Resorting(config_sort, self.clusters_tmp, selected_clusters)
         if res['stat']:
             self.statusBar().showMessage(self.tr("Manual ReSorting Done."), 2500)
             self.clusters_tmp = np.array(res['clusters'])
-
-            self.UpdatedClusterIndex()
-            self.statusBar().showMessage(self.tr("Clusters Waveforms Updated..."), 2500)
-            self.wait()
-            self.updateplotWaveForms(self.clusters_tmp)
-            self.wait()
-            self.update_plotRaw(self.clusters_tmp)
-            self.wait()
-            self.updateManualClusterList(self.clusters_tmp)
         else:
             self.statusBar().showMessage(self.tr("Manual ReSorting got error"))
 
@@ -443,30 +551,32 @@ class MainApp(MainWindow):
             return
         config_sort = self.read_config_sort()
         self.statusBar().showMessage(self.tr("Sorting Started..."))
-        self.wait()
+        self.processEvents()
         res = self.user.start_sorting(config_sort)
         if res['stat']:
             self.statusBar().showMessage(self.tr("Sorting Done."), 2500)
             res = self.user.get_sorting_result()
             if res['stat']:
                 self.clusters = res['clusters']
+                self.cluster_time_vec = res["cluster_time_vec"]
                 self.clusters_init = self.clusters.copy()
                 self.clusters_tmp = self.clusters.copy()
                 self.statusBar().showMessage(self.tr("Clusters Waveforms..."), 2500)
-                self.wait()
+                self.processEvents()
                 self.updateplotWaveForms(self.clusters)
-                self.wait()
-                self.update_plotRaw(self.clusters)
-                self.wait()
+                self.processEvents()
+                self.updatePlotRaw()
+                self.processEvents()
                 self.updateManualClusterList(self.clusters_tmp)
-                self.plotDetectionResult()
-                self.plotPcaResult()
+                self.plotHistogramPCA()
+                self.plotPCA2D()
 
         else:
             self.statusBar().showMessage(self.tr("Sorting got error"))
 
     def plotRaw(self):
         curve = HDF5Plot()
+        curve.setAPI(self.user)
         curve.setHDF5(self.raw)
         self.widget_raw.clear()
         self.widget_raw.addItem(curve)
@@ -474,27 +584,27 @@ class MainApp(MainWindow):
         self.widget_raw.showGrid(x=True, y=True)
         self.widget_raw.setMouseEnabled(y=False)
 
-    def update_plotRaw(self, clusters):
-        data = self.raw
-        colors = self.colors
-        num_of_clusters = self.number_of_clusters
-        spike_time = self.spike_time
-        time = SegmentedTime(spike_time, clusters)
-        multi_curve = MultiColoredCurve(data, time, num_of_clusters, len(data))
+    def updatePlotRaw(self):
+        curve = HDF5Plot()
+        curve.setAPI(self.user)
+        curve.setHDF5(self.raw)
         self.widget_raw.clear()
-        for i in range(num_of_clusters + 1):
-            curve = HDF5Plot()
-            if i == num_of_clusters:
-                color = (255, 255, 255)
+        self.widget_raw.showGrid(x=True, y=True)
+        self.widget_raw.setMouseEnabled(y=False)
+        self.widget_raw.addItem(curve)
+
+        if self.cluster_time_vec is not None:
+            for i, i_cluster in enumerate(np.unique(self.cluster_time_vec)):
+                if i_cluster == 0:
+                    continue
+                color = self.colors[i - 1]
                 pen = pyqtgraph.mkPen(color=color)
-            else:
-                color = colors[i]
-                pen = pyqtgraph.mkPen(color=color)
-            curve.setHDF5(multi_curve.curves[str(i)], pen)
-            self.widget_raw.addItem(curve)
-            self.widget_raw.setXRange(0, 10000)
-            self.widget_raw.showGrid(x=True, y=True)
-            self.widget_raw.setMouseEnabled(y=False)
+                curve = HDF5Plot()
+                curve.setAPI(self.user)
+                curve.setHDF5(self.raw, pen)
+                curve.setCluster(self.cluster_time_vec == i_cluster)
+                self.widget_raw.addItem(curve)
+        self.widget_raw.setXRange(0, 10000)
 
     def onVisPlot(self):
         self.widget_visualizations()
@@ -537,7 +647,7 @@ class MainApp(MainWindow):
         if i == 4: return (t, p, v)
         if i == 5: return (v, p, q)
 
-    def distin_color(self, number_of_colors):
+    def distinctColors(self, number_of_colors):
         colors = []
         golden_ratio_conjugate = 0.618033988749895
         # h = np.random.rand(1)[0]
@@ -547,26 +657,25 @@ class MainApp(MainWindow):
             h = h % 1
             colors.append(self.hsv_to_rgb(h, 0.99, 0.99))
 
-        return np.array(colors)
+        return np.array(colors, dtype=int)
 
     def updateplotWaveForms(self, clusters_=None):
         if clusters_ is None:
             clusters_ = self.clusters_tmp.copy()
 
         if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
+            spike_mat = self.spike_mat[self.clusters_tmp[self.inds,] != -1, :]
         else:
             spike_mat = self.spike_mat
 
-        clusters = clusters_[clusters_ != -1]
+        clusters = clusters_[self.inds][clusters_[self.inds] != -1]
 
         un = np.unique(clusters)
 
         self.number_of_clusters = len(un[un >= 0])
-        self.colors = self.distin_color(self.number_of_clusters)
         spike_clustered = dict()
         for i in range(self.number_of_clusters):
-            spike_clustered[i] = spike_mat[clusters == i]
+            spike_clustered[i] = spike_mat[clusters == i, :]
 
         self.widget_waveform.clear()
         self.widget_waveform.showGrid(x=True, y=True)
@@ -575,25 +684,15 @@ class MainApp(MainWindow):
         for i in range(self.number_of_clusters):
             avg = np.average(spike_clustered[i], axis=0)
             color = self.colors[i]
-            # selected_spike = spike_clustered[i][np.sum(np.power(spike_clustered[i] - avg, 2), axis=1) <
-            #                                     np.sum(np.power(avg, 2)) * 0.2]
 
-            # if self.saveManualFlag or self.plotManualFlag:
             if len(spike_clustered[i]) > 100:
                 ind = np.arange(spike_clustered[i].shape[0])
                 np.random.shuffle(ind)
                 spike = spike_clustered[i][ind[:100], :]
             else:
                 spike = spike_clustered[i]
-
-            # else:
-            #     if len(selected_spike) > 100:
-            #         ind = np.arange(selected_spike.shape[0])
-            #         np.random.shuffle(ind)
-            #         spike = selected_spike[ind[:100], :]
-            #     else:
-            #         spike = selected_spike
-
+            if spike.shape[0] == 0:
+                continue
             x = np.empty(np.shape(spike))
             x[:] = np.arange(np.shape(spike)[1])[np.newaxis]
 
@@ -607,55 +706,38 @@ class MainApp(MainWindow):
 
         self.widget_waveform.autoRange()
 
-    def create_sub_base(self):
-        self.number_of_clusters = np.shape(np.unique(self.clusters))[0]
-        # self.number_of_clusters = len(np.unique(self.clusters))
-        if self.number_of_clusters % 3 != 0:
-            nrow = int(self.number_of_clusters / 3) + 1
-        else:
-            nrow = int(self.number_of_clusters / 3)
-
-        self.sub_base = str(nrow) + str(3)
-
     def onPlotClusterWave(self):
         try:
-            self.create_sub_base()
+            # self.create_sub_base()
             number_of_clusters = self.number_of_clusters
             colors = self.colors
             spike_clustered = dict()
             for i in range(number_of_clusters):
-                spike_clustered[i] = self.spike_mat[self.clusters_tmp == i]
+                spike_clustered[i] = self.spike_mat[self.clusters_tmp[self.inds] == i]
 
-            figure = MatPlotFigures('Clusters Waveform', number_of_clusters, width=10, height=6, dpi=100,
-                                    subplot_base=self.sub_base)
+            figure = MatPlotFigures('Clusters Waveform', number_of_clusters, width=10, height=6, dpi=100)
 
             for i, ax in enumerate(figure.axes):
+                for spike in spike_clustered[i]:
+                    ax.plot(spike, color=tuple(colors[i] / 255), linewidth=1, alpha=0.25)
                 avg = np.average(spike_clustered[i], axis=0)
-                selected_spike = spike_clustered[i][np.sum(np.power(spike_clustered[i] - avg, 2), axis=1) <
-                                                    np.sum(np.power(avg, 2)) * 0.2]
-
-                # selected_spike = spike_clustered[i][:5]
-                ax.plot(avg, color='red', linewidth=3)
-                for spike in selected_spike[:100]:
-                    ax.plot(spike, color=tuple(colors[i] / 255), linewidth=1, alpha=0.125)
+                ax.plot(avg, color='red', linewidth=2)
                 ax.set_title('Cluster {}'.format(i + 1))
             plt.tight_layout()
             plt.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def onPlotLiveTime(self):
         try:
-            self.create_sub_base()
             number_of_clusters = self.number_of_clusters
             colors = self.colors
             spike_clustered_time = dict()
             for i in range(number_of_clusters):
                 spike_clustered_time[i] = self.spike_time[self.clusters == i]
 
-            figure = MatPlotFigures('LiveTime', number_of_clusters, width=10, height=6, dpi=100,
-                                    subplot_base=self.sub_base)
+            figure = MatPlotFigures('LiveTime', number_of_clusters, width=10, height=6, dpi=100)
             for i, ax in enumerate(figure.axes):
                 ax.hist(spike_clustered_time[i], bins=100, color=tuple(colors[i] / 255))
                 ax.set_title('Cluster {}'.format(i + 1))
@@ -663,11 +745,10 @@ class MainApp(MainWindow):
             plt.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def onPlotIsi(self):
         try:
-            self.create_sub_base()
             number_of_clusters = self.number_of_clusters
             colors = self.colors
             spike_clustered_time = dict()
@@ -678,7 +759,7 @@ class MainApp(MainWindow):
                 tmp1 = spike_clustered_time[i][1:].copy()
                 spike_clustered_delta[i] = tmp1 - tmp2
 
-            figure = MatPlotFigures('ISI', number_of_clusters, width=10, height=6, dpi=100, subplot_base=self.sub_base)
+            figure = MatPlotFigures('ISI', number_of_clusters, width=10, height=6, dpi=100)
 
             for i, ax in enumerate(figure.axes):
                 gamma = stats.gamma
@@ -704,84 +785,48 @@ class MainApp(MainWindow):
 
     def Plot3d(self):
         try:
-            self.plot_3d.setCameraPosition(distance=30)
             axis1 = self.axis1ComboBox.currentIndex()
             axis2 = self.axis2ComboBox.currentIndex()
             axis3 = self.axis3ComboBox.currentIndex()
             number_of_clusters = len(np.unique(self.clusters))
 
             # Prepration
-            pca = decom.PCA(n_components=3)
-            pca_spikes = pca.fit_transform(self.spike_mat)
-            pca1 = pca_spikes[:, 0]
-            pca2 = pca_spikes[:, 1]
-            pca3 = pca_spikes[:, 2]
-            spike_time = np.squeeze(self.spike_time / 100000)
+
+            pca_spikes = self.pca_spikes
+            pca1 = pca_spikes[self.inds, 0]
+            pca2 = pca_spikes[self.inds, 1]
+            pca3 = pca_spikes[self.inds, 2]
+            spike_time = np.squeeze(self.spike_time[self.inds])
             p2p = np.squeeze(np.abs(np.amax(self.spike_mat, axis=1) - np.amin(self.spike_mat, axis=1)))
             duty = np.squeeze(np.abs(np.argmax(self.spike_mat, axis=1) - np.argmin(self.spike_mat, axis=1)) / 5)
 
-            gx = gl.GLGridItem()
-            gx.rotate(90, 0, 1, 0)
-            gx.setSize(15, 15)
-            gx.translate(-7.5, 0, 0)
-            self.plot_3d.addItem(gx)
-            gy = gl.GLGridItem()
-            gy.rotate(90, 1, 0, 0)
-            gy.setSize(15, 15)
-            gy.translate(0, -7.5, 0)
-            self.plot_3d.addItem(gy)
-            gz = gl.GLGridItem()
-            gz.setSize(15, 15)
-            gz.translate(0, 0, -7.5)
-            self.plot_3d.addItem(gz)
-
-            mode_flag = False
             mode_list = [pca1, pca2, pca3, spike_time, p2p, duty]
-            if (axis1 != axis2) and (axis1 != axis3) and (axis2 != axis3):
-                pos = np.array((mode_list[axis1], mode_list[axis2], mode_list[axis3])).T
-                mode_flag = True
+            a1, a2, a3 = mode_list[axis1], mode_list[axis2], mode_list[axis3]
 
-            if mode_flag:
-                colors = self.colors
-                items = self.plot_3d.items.copy()
-                for it in items:
-                    if type(it) == pyqtgraph.opengl.items.GLScatterPlotItem.GLScatterPlotItem:
-                        self.plot_3d.removeItem(it)
-
-                for i in range(number_of_clusters):
-                    pos_cluster = pos[self.clusters == i, :]
-                    avg = np.average(pos_cluster, axis=0)
-                    selected_pos = pos_cluster[np.sum(np.power((pos[self.clusters == i, :] - avg), 2), axis=1) <
-                                               0.05 * np.amax(np.sum(np.power((pos[self.clusters == i, :] - avg), 2),
-                                                                     axis=1)), :]
-                    ind = np.arange(selected_pos.shape[0])
-                    np.random.shuffle(ind)
-                    scattered_pos = selected_pos[ind[:300], :]
-                    color = np.zeros([np.shape(scattered_pos)[0], 4])
-                    color[:, 0] = colors[i][0] / 255
-                    color[:, 1] = colors[i][1] / 255
-                    color[:, 2] = colors[i][2] / 255
-                    color[:, 3] = 1
-                    self.plot_3d.addItem(gl.GLScatterPlotItem(pos=scattered_pos, size=3, color=color))
-            else:
-                print('Same Axis Error')
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            for i in range(number_of_clusters):
+                ax.scatter(a1[self.clusters_tmp[self.inds] == i], a2[self.clusters_tmp[self.inds] == i],
+                           a3[self.clusters_tmp[self.inds] == i], c='#%02x%02x%02x' % tuple(self.colors[i]))
+            ax.set_xlabel(self.axis1ComboBox.currentText())
+            ax.set_ylabel(self.axis2ComboBox.currentText())
+            ax.set_zlabel(self.axis3ComboBox.currentText())
+            plt.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def close3D(self):
         self.subwindow_3d.setVisible(False)
 
-    def plotDetectionResult(self):
+    def plotHistogramPCA(self):
         try:
-            if self.clusters_tmp is not None:
-                spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
-            else:
-                spike_mat = self.spike_mat
-
             self.plot_histogram_pca.clear()
-            pca = decom.PCA(n_components=2)
-            pca_spikes = pca.fit_transform(spike_mat)
+            if self.clusters_tmp is None:
+                pca_spikes = self.pca_spikes
+            else:
+                pca_spikes = self.pca_spikes[self.clusters_tmp != -1]
+
             hist, xedges, yedges = np.histogram2d(pca_spikes[:, 0], pca_spikes[:, 1], bins=512)
 
             x_range = xedges[-1] - xedges[0]
@@ -812,22 +857,19 @@ class MainApp(MainWindow):
             self.plot_histogram_pca.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
-    def plotPcaResult(self):
+    def plotPCA2D(self):
         self.plot_clusters_pca.clear()
 
         if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
             clusters_ = self.clusters_tmp[self.clusters_tmp != -1]
+            x_data = self.pca_spikes[self.clusters_tmp != -1, 0]
+            y_data = self.pca_spikes[self.clusters_tmp != -1, 1]
         else:
-            spike_mat = self.spike_mat
             clusters_ = None
-
-        pca = decom.PCA(n_components=2)
-        pca_spikes = pca.fit_transform(spike_mat)
-        x_data = pca_spikes[:, 0]
-        y_data = pca_spikes[:, 1]
+            x_data = self.pca_spikes[:, 0]
+            y_data = self.pca_spikes[:, 1]
 
         scatter = pyqtgraph.ScatterPlotItem()
 
@@ -841,8 +883,7 @@ class MainApp(MainWindow):
         else:
             un = np.unique(clusters_)
             n_clusters = len(un[un >= 0])
-            print("clusters", n_clusters)
-            new_colors = self.distin_color(n_clusters)
+            new_colors = self.distinctColors(n_clusters)
             for i in range(n_clusters):
                 xx = x_data[clusters_ == i]
                 yy = y_data[clusters_ == i]
@@ -876,8 +917,7 @@ class MainApp(MainWindow):
         self.subwindow_detect3d.setVisible(True)
 
         try:
-            pca = decom.PCA(n_components=2)
-            pca_spikes = pca.fit_transform(self.spike_mat)
+            pca_spikes = self.pca_spikes
             hist, xedges, yedges = np.histogram2d(pca_spikes[:, 0], pca_spikes[:, 1], bins=512)
 
             gx = gl.GLGridItem()
@@ -910,14 +950,13 @@ class MainApp(MainWindow):
                     self.plot_detect3d.addItem(bg)
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def closeDetect3D(self):
         self.subwindow_detect3d.setVisible(False)
 
     def onDetect3D1(self):
-        pca = decom.PCA(n_components=2)
-        pca_spikes = pca.fit_transform(self.spike_mat)
+        pca_spikes = self.pca_spikes
         hist, xedges, yedges = np.histogram2d(pca_spikes[:, 0], pca_spikes[:, 1], bins=512)
         xpos, ypos = np.meshgrid(xedges[:-1] + xedges[1:], yedges[:-1] + yedges[1:]) - (xedges[1] - xedges[0])
         xpos = xpos.flatten() * 1. / 2
@@ -978,10 +1017,6 @@ class MainApp(MainWindow):
         """Perform checks in regular intervals."""
         self.mdiArea.checkTimestamps()
 
-    def wait(self, duration=2.0):
-        QtWidgets.QApplication.processEvents()
-        time.sleep(duration)
-
     def UpdatedClusterIndex(self):
         cl_ind = np.unique(self.clusters_tmp)
         cnt = 0
@@ -989,9 +1024,10 @@ class MainApp(MainWindow):
             if not ind == -1:
                 self.clusters_tmp[self.clusters_tmp == ind] = cnt
                 cnt += 1
+        self.onSaveManualSorting()
 
     def manualPreparingSorting(self, temp):
-        if len(self.tempList) == 5:
+        if len(self.tempList) == 10:
             self.tempList.pop(0)
         self.tempList.append(temp)
         self.plotManualFlag = True
@@ -1002,7 +1038,7 @@ class MainApp(MainWindow):
         self.listWidget.clear()
         # n_clusters = np.shape(np.unique(temp))[0]
         n_clusters = len(np.unique(cluster_temp)[np.unique(cluster_temp) >= 0])
-        colors = self.distin_color(n_clusters)
+        colors = self.distinctColors(n_clusters)
         for i in range(n_clusters):
             item = QtWidgets.QListWidgetItem("Cluster {} ({:4.2f} %)".format(i + 1, (cluster_temp == i).mean() * 100))
             pixmap = QPixmap(50, 50)
@@ -1016,81 +1052,79 @@ class MainApp(MainWindow):
             act = self.manualActWidget.currentItem()
             clusters = self.listWidget.selectedIndexes()
             selected_clusters = [cl.row() for cl in clusters]
+            self.manualPreparingSorting(self.clusters_tmp.copy())
             if act.text() == 'Merge':
                 try:
                     self.mergeManual(selected_clusters)
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
-                    self.updateManualClusterList(self.clusters_tmp.copy())
+                    self.plotFlagClusterBased = True
                 except:
-                    print("an error accrued in manual Merge")
                     print(traceback.format_exc())
             elif act.text() == 'Remove':
                 try:
                     self.removeManual(selected_clusters)
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
-                    self.updateManualClusterList(self.clusters_tmp.copy())
-                    self.plotHistFlag = True
+                    self.plotFlagHist = True
+                    self.plotFlagClusterBased = True
                 except:
                     print("an error accrued in manual Remove")
                     print(traceback.format_exc())
+            elif act.text() == "Resort":
+                try:
+                    self.manualResort(selected_clusters)
+                    self.plotFlagHist = True
+                    self.plotFlagClusterBased = True
+                except:
+                    print("an error accrued in manual resort")
+                    print(traceback.format_exc())
+
             elif act.text() == 'Assign to nearest':
                 try:
                     self.assignManual()
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
-
                 except:
                     print("an error accrued in manual Assign to nearest")
                     print(traceback.format_exc())
             elif act.text() == "PCA Remove":
                 try:
                     self.pca_manual = "Remove"
-                    self.OnPcaRemove()
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
-                    self.plotHistFlag = True
-
+                    self.OnPcaManualAct()
                 except:
-                    print("an error accrued in manual pcaRemove")
                     print(traceback.format_exc())
-                    pass
             elif act.text() == "PCA Group":
                 try:
                     self.pca_manual = "Group"
-                    self.OnPcaRemove()
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
-
+                    self.OnPcaManualAct()
                 except:
-                    print("an error accrued in manual pcaGroup")
                     print(traceback.format_exc())
-                    pass
 
-            elif act.text() == "Resort":
-                try:
-                    self.manualResort(selected_clusters)
-                    self.manualPreparingSorting(self.clusters_tmp.copy())
-                    self.updateManualClusterList(self.clusters_tmp.copy())
-                except:
-                    print("an error accrued in manual resort")
-                    print(traceback.format_exc())
+            self.UpdatedClusterIndex()
+            self.updateManualClusterList(self.clusters_tmp)
             if self.autoPlotManualCheck.isChecked():
-                self.onPlotManualSorting()
+                self.updateFigures()
         except:
             print(traceback.format_exc())
             self.statusBar().showMessage(self.tr("an error accrued in manual act !"), 2000)
 
-    def onPlotManualSorting(self):
-        # update 2d pca plot
-        self.plotPcaResult()
-        if self.plotHistFlag:
-            self.plotDetectionResult()
-            self.plotHistFlag = False
+    # def onPlotManualSorting(self):
+    #     # update 2d pca plot
+    #     self.plotPCA2D()
+    #     if self.plotHistFlag:
+    #         self.plotHistogramPCA()
+    #         self.plotHistFlag = False
+    #
+    #     if self.plotManualFlag:
+    #         self.updateplotWaveForms(self.clusters_tmp.copy())
+    #         self.statusBar().showMessage(self.tr("Updating Spikes Waveforms..."))
+    #         self.wait()
+    #         self.update_plotRaw()
+    #         self.statusBar().showMessage(self.tr("Updating Raw Data Waveforms..."), 2000)
+    #         self.plotManualFlag = False
 
-        if self.plotManualFlag:
-            self.updateplotWaveForms(self.clusters_tmp.copy())
-            self.statusBar().showMessage(self.tr("Updating Spikes Waveforms..."))
-            self.wait()
-            self.update_plotRaw(self.clusters_tmp.copy())
-            self.statusBar().showMessage(self.tr("Updating Raw Data Waveforms..."), 2000)
-            self.plotManualFlag = False
+    def updateFigures(self):
+        if self.plotFlagHist:
+            self.plotHistogramPCA()
+        if self.plotFlagClusterBased:
+            self.plotPCA2D()
+            self.updatePlotRaw()
+            self.updateplotWaveForms()
 
     def onResetManualSorting(self):
 
@@ -1098,16 +1132,16 @@ class MainApp(MainWindow):
         self.tempList = []
 
         # update 2d pca plot
-        self.plotDetectionResult()
-        self.plotPcaResult()
+        self.plotHistogramPCA()
+        self.plotPCA2D()
 
         # update cluster list
-        self.updateManualClusterList(self.clusters_tmp.copy())
+        self.updateManualClusterList(self.clusters_tmp)
         self.updateplotWaveForms(self.clusters_init.copy())
         self.statusBar().showMessage(self.tr("Resetting Spikes Waveforms..."))
-        self.wait()
+        self.processEvents()
 
-        self.update_plotRaw(self.clusters_init.copy())
+        self.updatePlotRaw()
         self.statusBar().showMessage(self.tr("Resetting Raw Data Waveforms..."), 2000)
 
         self.resetManualFlag = False
@@ -1115,52 +1149,37 @@ class MainApp(MainWindow):
         self.saveManualFlag = False
 
     def onSaveManualSorting(self):
-        if self.saveManualFlag:
-            self.clusters = self.clusters_tmp.copy()
-            # self.number_of_clusters = np.shape(np.unique(self.clusters))[0]
-            self.statusBar().showMessage(self.tr("Save Clustering Results..."))
-            self.wait()
+        self.clusters = self.clusters_tmp.copy()
+        self.statusBar().showMessage(self.tr("Save Clustering Results..."))
+        self.processEvents()
 
-            res = self.user.save_sort_results(self.clusters)
-            if res['stat']:
-                self.wait()
-                self.statusBar().showMessage(self.tr("Updating Spikes Waveforms..."))
-                self.updateplotWaveForms(self.clusters)
-                self.wait()
-                self.statusBar().showMessage(self.tr("Updating Raw Data Waveforms..."), 2000)
-                self.update_plotRaw(self.clusters)
-                self.wait()
-                self.statusBar().showMessage(self.tr("Saving Done."))
-                self.updateManualClusterList(self.clusters_tmp)
-                # self.updateManualSortingView()
-            else:
-                self.statusBar().showMessage(self.tr("An error occurred in saving!..."), 2000)
-
-            self.saveManualFlag = False
+        res = self.user.save_sort_results(self.clusters)
+        if not res['stat']:
+            self.statusBar().showMessage(self.tr("An error occurred in saving!..."), 2000)
 
     def onUndoManualSorting(self):
         try:
-            self.tempList.pop()
-            if len(self.tempList) != 0:
-                self.clusters_tmp = self.tempList[-1]
+
+            if len(self.tempList) > 0:
+                self.clusters_tmp = self.tempList.pop()
             else:
-                self.clusters_tmp = self.clusters_init.copy()
+                QtWidgets.QMessageBox.information(self, "ROSS", "No More Undo :(")
 
             # update cluster list
             self.updateManualClusterList(self.clusters_tmp)
 
             # update 2d pca plot
             if self.autoPlotManualCheck.isChecked():
-                self.plotDetectionResult()
-                self.plotPcaResult()
+                self.plotHistogramPCA()
+                self.plotPCA2D()
 
                 self.updateplotWaveForms(self.clusters_tmp.copy())
                 self.statusBar().showMessage(self.tr("Undoing Spikes Waveforms..."), 2000)
-                self.wait()
+                self.processEvents()
                 self.statusBar().showMessage(self.tr("Undoing Raw Data Waveforms..."), 2000)
-                self.update_plotRaw(self.clusters_tmp.copy())
+                self.updatePlotRaw(self.clusters_tmp.copy())
             self.statusBar().showMessage(self.tr("Undoing Done!"), 2000)
-            self.wait()
+            self.processEvents()
 
         except:
             self.statusBar().showMessage(self.tr("There is no manual act for undoing!"), 2000)
@@ -1168,58 +1187,42 @@ class MainApp(MainWindow):
     def mergeManual(self, selected_clusters):
         if len(selected_clusters) >= 2:
             self.statusBar().showMessage(self.tr("Merging..."))
-            self.wait()
+            self.processEvents()
             sel_cl = selected_clusters[0]
 
             for ind in selected_clusters:
                 self.clusters_tmp[self.clusters_tmp == ind] = sel_cl
 
-            self.UpdatedClusterIndex()
-
             self.statusBar().showMessage(self.tr("...Merging Done!"), 2000)
-            self.wait()
+            self.processEvents()
         else:
             self.statusBar().showMessage(self.tr("For Merging you should select at least two clusters..."), 2000)
 
     def removeManual(self, selected_clusters):
         if len(selected_clusters) != 0:
             self.statusBar().showMessage(self.tr("Removing..."))
-            self.wait()
+            self.processEvents()
             for sel_cl in selected_clusters:
                 self.clusters_tmp[self.clusters_tmp == sel_cl] = - 1
-            self.UpdatedClusterIndex()
             self.statusBar().showMessage(self.tr("...Removing Done!"), 2000)
         else:
             self.statusBar().showMessage(self.tr("For Removing you should select at least one clusters..."), 2000)
 
     def assignManual(self):
         self.subwindow_assign.setVisible(True)
-        try:
-            n_clusters = self.number_of_clusters
 
-        except:
-            n_clusters = 0
-        # try:
-        #     self.listSourceWidget.close()
-        #     self.listTargetsWidget.close()
-        #     self.assign_button.close()
-        #     self.assign_close_button.close()
-        # except:
-        #     pass
+        n_clusters = len(np.unique(self.clusters_tmp))
+
         try:
             self.listSourceWidget.clear()
-            for i in range(n_clusters):
-                item = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
-                self.listSourceWidget.addItem(item)
-            self.listSourceWidget.setCurrentItem(item)
-
             self.listTargetsWidget.clear()
             for i in range(n_clusters):
-                item_target = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
-                self.listTargetsWidget.addItem(item_target)
-            self.listTargetsWidget.setCurrentItem(item_target)
+                item1 = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
+                item2 = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
+                self.listSourceWidget.addItem(item1)
+                self.listTargetsWidget.addItem(item2)
         except:
-            pass
+            print(traceback.format_exc())
 
     def onAssignManualSorting(self):
         source = self.listSourceWidget.currentItem()
@@ -1232,54 +1235,48 @@ class MainApp(MainWindow):
         try:
             if len(target_clusters) >= 1:
                 self.statusBar().showMessage(self.tr("Assigning Source Cluster to Targets..."))
-                self.wait()
+                self.processEvents()
 
-                source_spikes = self.spike_mat[self.clusters_tmp == source_cluster]
+                source_spikes = self.pca_spikes[self.clusters_tmp == source_cluster]
                 source_ind = np.nonzero(self.clusters_tmp == source_cluster)
 
                 target_avg = np.zeros((len(target_clusters), source_spikes.shape[1]))
                 for it, target in enumerate(target_clusters):
-                    target_avg[it, :] = np.average(self.spike_mat[self.clusters_tmp == target], axis=0)
+                    target_avg[it, :] = np.average(self.pca_spikes[self.clusters_tmp == target], axis=0)
                 # TODO: check different nearest_neighbors algorithms
                 nbrs = NearestNeighbors(n_neighbors=1).fit(target_avg)
                 indices = nbrs.kneighbors(source_spikes, return_distance=False)
                 self.clusters_tmp[source_ind] = np.array(target_clusters)[indices.squeeze()]
 
-                self.UpdatedClusterIndex()
-
                 self.statusBar().showMessage(self.tr("...Assigning to Nearest Clusters Done!"), 2000)
-                self.wait()
+                self.processEvents()
 
                 self.listSourceWidget.clear()
                 self.listTargetsWidget.clear()
-
-                for i in range(len(np.unique(self.clusters_tmp))):
-                    item = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
-                    self.listSourceWidget.addItem(item)
-
-                for i in range(len(np.unique(self.clusters_tmp))):
-                    item_target = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
-                    self.listTargetsWidget.addItem(item_target)
-
-                self.manualPreparingSorting(self.clusters_tmp.copy())
+                # TODO: check for all bugs like this
+                # for i in range(len(np.unique(self.clusters_tmp))):
+                cu = np.unique(self.clusters_tmp)
+                for i in range(len(cu[cu != -1])):
+                    item1 = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
+                    item2 = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
+                    self.listSourceWidget.addItem(item1)
+                    self.listTargetsWidget.addItem(item2)
+                self.UpdatedClusterIndex()
+                self.updateManualClusterList(self.clusters_tmp)
+                if self.autoPlotManualCheck.isChecked():
+                    self.plotFlagClusterBased = True
+                    self.updateFigures()
             else:
                 self.statusBar().showMessage(self.tr("You Should Choose One Source and at least One Target..."), 2000)
-
-            self.updateManualClusterList(self.clusters_tmp)
         except:
-            pass
+            print(traceback.format_exc())
 
     def closeAssign(self):
         self.subwindow_assign.setVisible(False)
 
-    def OnPcaRemove(self):
-        if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
-        else:
-            spike_mat = self.spike_mat
+    def OnPcaManualAct(self):
 
-        pca = decom.PCA(n_components=2)
-        self.pca_spikes = pca.fit_transform(spike_mat)
+        self.pca_spikes = self.pca_spikes
         hist, xedges, yedges = np.histogram2d(self.pca_spikes[:, 0], self.pca_spikes[:, 1], bins=512)
 
         x_range = xedges[-1] - xedges[0]
@@ -1296,7 +1293,7 @@ class MainApp(MainWindow):
         if image._renderRequired:
             image.render()
         image.qimage = image.qimage.transformed(QTransform().scale(1, -1))
-        image.save('test.png')
+        image.save('.tmp/test.png')
 
         self.PCAManualResetButton()
         self.subwindow_pca_manual.setVisible(True)
@@ -1305,13 +1302,8 @@ class MainApp(MainWindow):
     def PCAManualDoneButton(self):
 
         points = self.subwindow_pca_manual.widget().points.copy()
-        if self.clusters_tmp is not None:
-            spike_mat = self.spike_mat[self.clusters_tmp != -1, :]
-        else:
-            spike_mat = self.spike_mat
 
-        pca = decom.PCA(n_components=2)
-        self.pca_spikes = pca.fit_transform(spike_mat)
+        self.pca_spikes = self.pca_spikes
         hist, xedges, yedges = np.histogram2d(self.pca_spikes[:, 0], self.pca_spikes[:, 1], bins=512)
         x_range = xedges[-1] - xedges[0]
         y_range = yedges[-1] - yedges[0]
@@ -1328,12 +1320,15 @@ class MainApp(MainWindow):
         poly = Polygon(norm_points)
 
         if self.pca_manual == "Remove":
+            self.plotFlagClusterBased = True
+            self.plotFlagHist = True
             for i in range(len(self.pca_spikes)):
                 p1 = Point(self.pca_spikes[i])
                 if not (p1.within(poly)):
                     self.clusters_tmp[i] = -1
 
         elif self.pca_manual == "Group":
+            self.plotFlagClusterBased = True
             clusters = self.clusters_tmp.copy()
             un = np.unique(clusters[clusters != -1])
             num_of_clusters = len(un[un >= 0])
@@ -1347,17 +1342,17 @@ class MainApp(MainWindow):
         else:
             print("pca manual flag is not define")
 
-        self.UpdatedClusterIndex()
         self.subwindow_pca_manual.widget().reset()
         self.subwindow_pca_manual.setVisible(False)
-        self.updateplotWaveForms(self.clusters_tmp.copy())
-        self.updateManualClusterList(self.clusters_tmp.copy())
-        self.plotDetectionResult()
-        self.plotPcaResult()
+
+        self.UpdatedClusterIndex()
+        self.updateManualClusterList(self.clusters_tmp)
+        if self.autoPlotManualCheck.isChecked():
+            self.updateFigures()
 
     def PCAManualResetButton(self):
         self.subwindow_pca_manual.widget().reset()
-        self.image = QPixmap('test.png')
+        self.image = QPixmap('.tmp/test.png')
         self.label_pca_manual.setMaximumWidth(self.image.width())
         self.label_pca_manual.setMaximumHeight(self.image.height())
         self.label_pca_manual.resize(self.image.width(), self.image.height())
@@ -1389,39 +1384,41 @@ class MainApp(MainWindow):
 
         res = self.user.get_raw_data()
         if res['stat']:
-            with open(res['raw'], 'rb') as f:
-                new_data = pickle.load(f)
+            if 'raw' in res:
+                with open(res['raw'], 'rb') as f:
+                    new_data = pickle.load(f)
 
-            self.raw = new_data
-            self.statusBar().showMessage(self.tr("Plotting..."), 2500)
-            self.wait()
+                self.raw = new_data
+                self.statusBar().showMessage(self.tr("Plotting..."), 2500)
+                self.processEvents()
             flag_raw = True
 
         res = self.user.get_detection_result()
         if res['stat']:
             self.spike_mat = res['spike_mat']
             self.spike_time = res['spike_time']
-            self.plotWaveForms()
-            self.plotDetectionResult()
-            self.plotPcaResult()
+            self.pca_spikes = res['pca_spikes']
+            self.inds = res['inds']
+            self.plotFlagHist = True
 
         # done
         res = self.user.get_sorting_result()
         if res['stat']:
             self.clusters_init = res['clusters']
+            self.cluster_time_vec = res['cluster_time_vec']
             self.clusters = self.clusters_init.copy()
             self.clusters_tmp = self.clusters_init.copy()
-            self.updateplotWaveForms(self.clusters_init.copy())
-            self.wait()
             flag_update_raw = True
             self.updateManualClusterList(self.clusters_tmp)
-            self.plotPcaResult()
+            self.plotFlagClusterBased = True
 
         if flag_raw:
             if flag_update_raw:
-                self.update_plotRaw(self.clusters)
+                self.updatePlotRaw()
             else:
                 self.plotRaw()
+
+        self.updateFigures()
 
     def read_config_detect(self):
         config = dict()

@@ -7,13 +7,14 @@ from flask_restful import Api
 from blacklist import BLACKLIST
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
-from resources.sort import SortDefault, Sort
-from resources.project import Project, Projects
-from resources.data import RawData, RawDataDefault
-from resources.detect import Detect, DetectDefault
+from resources.sort import SortDefault
+from resources.project import Projects
+from resources.data import RawDataDefault
+from resources.detect import DetectDefault
 from resources.sorting_result import SortingResultDefault
-from resources.detection_result import DetectionResultDefault
+from resources.detection_result import DetectionResult, DetectionResultSpikeMat
 from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
+from resources.browse import Browse
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'  # 'sqlite:///:memory:' # 'sqlite:///data.db'
@@ -87,19 +88,19 @@ api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
 api.add_resource(User, '/user/<int:user_id>')
 
-# api.add_resource(RawData, '/raw/<string:name>')
 api.add_resource(RawDataDefault, '/raw')
 api.add_resource(DetectDefault, '/detect')
-# api.add_resource(Detect, '/detect/<string:name>')
 api.add_resource(SortDefault, '/sort')
-# api.add_resource(Sort, '/sort/<string:name>')
 
-api.add_resource(DetectionResultDefault, '/detection_result')
+api.add_resource(DetectionResult, '/detection_result')
+api.add_resource(DetectionResultSpikeMat, '/detection_result_waveform')
 api.add_resource(SortingResultDefault, '/sorting_result')
 
 api.add_resource(Projects, '/projects')
 # api.add_resource(Project, '/project/<string:name>')
 
+api.add_resource(Browse, '/browse')
+
 if __name__ == '__main__':
     db.init_app(app)
-    app.run(port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)

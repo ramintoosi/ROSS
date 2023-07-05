@@ -1,36 +1,12 @@
-import pickle
+import random
 
 import numpy as np
 import pyyawt
 import scipy.signal
-from models.config import ConfigDetectionModel
-from models.data import RawModel
+import sklearn.decomposition as decom
 
 
-def startDetection(project_id):
-    raw = RawModel.find_by_project_id(project_id)
-
-    if not raw:
-        raise Exception
-    config = ConfigDetectionModel.find_by_project_id(project_id)
-    if not config:
-        raise Exception
-    if not raw.data:
-        raise Exception
-
-    # print("raw.data", raw.data)
-    # b = io.BytesIO()
-    # b.write(raw.data)
-    # b.seek(0)
-    # d = np.load(b, allow_pickle=True)
-    # data_address = d['raw']
-
-    with open(raw.data, 'rb') as f:
-        new_data = pickle.load(f)
-        data = new_data
-
-    # b.close()
-
+def startDetection(data, config):
     thr_method = config.thr_method
     fRp = config.pass_freq
     fRs = config.stop_freq
@@ -51,7 +27,13 @@ def startDetection(project_id):
     # spike detection
     SpikeMat, SpikeTime = spike_detector(data_filtered, thr, pre_thr, post_thr, dead_time, thr_side)
     # print("SpikeMat shape and SpikeTime shape : ", SpikeMat.shape, SpikeTime.shape)
-    return SpikeMat, SpikeTime
+
+    pca = decom.PCA(n_components=3)
+    pca_spikes = pca.fit_transform(SpikeMat)
+    inds = list(range(pca_spikes.shape[0]))
+    random.shuffle(inds)
+
+    return SpikeMat, SpikeTime, pca_spikes, tuple(inds)
 
 
 # Threshold
@@ -74,11 +56,8 @@ def threshold_calculator(method, thr_factor, data):
 
 # Filtering
 def filtering(data, forder, fRp, fRs, sr):
-    # print('inside filtering!')
     b, a = scipy.signal.butter(forder, (fRp / (sr / 2), fRs / (sr / 2)), btype='bandpass')
-    # print('after b, a')
     data_filtered = scipy.signal.filtfilt(b, a, data)
-    # print('after filtfilt!')
     return data_filtered
 
 
@@ -121,7 +100,7 @@ def spike_detector(data, thr, pre_thresh, post_thresh, dead_time, side):
     indx_spikes = np.nonzero(spike_detected)[0]
 
     SpikeMat = np.zeros((len(indx_spikes), n_points_per_spike))
-    SpikeTime = np.zeros((len(indx_spikes), 1))
+    SpikeTime = np.zeros((len(indx_spikes),), dtype=np.uint32)
 
     # assigning SpikeMat and SpikeTime matrices
     for i, curr_indx in enumerate(indx_spikes):

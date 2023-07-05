@@ -36,7 +36,7 @@ def dmvt_ls(y, mu, Sigma, landa, nu):
     t = scipy.stats.t(nu + p)
     dens = 2 * (denst) * t.cdf(np.sqrt((p + nu) / (mahalanobis_d + nu)) * np.expand_dims(np.sum(
         np.tile(np.expand_dims(np.linalg.lstsq(matrix_sqrt(Sigma).T, landa.T, rcond=None)[0], axis=0), (n, 1)) * (
-                    y - mu), axis=1), axis=1))
+                y - mu), axis=1), axis=1))
     return dens
 
 
@@ -141,7 +141,7 @@ def spike_alignment(spike_mat, spike_time, ss):
     newSpikeMat = spike_mat[:, max_shift:-max_shift]
 
     # shifting time with the amount of "max_shift" because first "max_shift" samples are ignored.
-    time_shift = np.zeros((n_spike, 1)) + max_shift
+    time_shift = np.zeros((n_spike,)) + max_shift
 
     # indices of neg group
     ind_neg_find = np.nonzero(ind_neg)[0]

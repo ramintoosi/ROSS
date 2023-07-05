@@ -1,35 +1,43 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 
 
 class Signin_Dialog(QtWidgets.QDialog):
     def __init__(self, server):
         super().__init__()
         self.url = server
-        self.setFixedSize(400, 300)
-        self.label = QtWidgets.QLabel(self)
-        self.label.setGeometry(QtCore.QRect(40, 60, 121, 21))
-        self.label_2 = QtWidgets.QLabel(self)
-        self.label_2.setGeometry(QtCore.QRect(50, 130, 121, 20))
+        self.setFixedSize(300, 150)
 
-        self.textEdit_username = QtWidgets.QLineEdit(self)
-        self.textEdit_username.setGeometry(QtCore.QRect(145, 55, 141, 31))
+        l_label = QtWidgets.QVBoxLayout()
+        l_line = QtWidgets.QVBoxLayout()
+        l_push = QtWidgets.QHBoxLayout()
+        l1 = QtWidgets.QHBoxLayout()
+        l2 = QtWidgets.QVBoxLayout()
 
-        self.textEdit_password = QtWidgets.QLineEdit(self)
-        self.textEdit_password.setGeometry(QtCore.QRect(145, 125, 141, 31))
+        self.label_u = QtWidgets.QLabel("Username")
+        self.label_p = QtWidgets.QLabel("Password")
+
+        l_label.addWidget(self.label_u)
+        l_label.addWidget(self.label_p)
+
+        self.textEdit_username = QtWidgets.QLineEdit()
+        self.textEdit_password = QtWidgets.QLineEdit()
         self.textEdit_password.setEchoMode(QtWidgets.QLineEdit.Password)
 
-        self.label_res = QtWidgets.QLabel(self)
-        self.label_res.setGeometry(QtCore.QRect(50, 180, 361, 16))
+        l_line.addWidget(self.textEdit_username)
+        l_line.addWidget(self.textEdit_password)
 
-        self.pushButton_in = QtWidgets.QPushButton(self)
-        self.pushButton_in.setGeometry(QtCore.QRect(130, 220, 121, 31))
+        l1.addLayout(l_label)
+        l1.addLayout(l_line)
 
-        self.pushButton_up = QtWidgets.QPushButton(self)
-        self.pushButton_up.setGeometry(QtCore.QRect(260, 220, 111, 31))
+        self.pushButton_in = QtWidgets.QPushButton("Sign In")
+        self.pushButton_up = QtWidgets.QPushButton("Sign Up")
 
-        self.setWindowTitle("Sign In/Up")
-        self.label.setText("Username")
-        self.label_2.setText("Password")
-        self.label_res.setText("")
-        self.pushButton_in.setText("Sign In")
-        self.pushButton_up.setText("Sign Up")
+        l_push.addWidget(self.pushButton_in)
+        l_push.addWidget(self.pushButton_up)
+
+        l2.addLayout(l1)
+        l2.addLayout(l_push)
+
+        self.setLayout(l2)
+
+        self.setWindowTitle('Authentication')

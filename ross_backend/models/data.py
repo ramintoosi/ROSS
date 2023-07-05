@@ -1,7 +1,6 @@
+from __future__ import annotations
+
 from db import db
-
-
-# from sqlalchemy.dialects import postgresql
 
 
 class RawModel(db.Model):
@@ -9,14 +8,16 @@ class RawModel(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     data = db.Column(db.String)
+    mode = db.Column(db.Integer, default=0)  # 0: inplace, 1: server
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"))
 
     # user = db.relationship('UserModel')
     # project = db.relationship('ProjectModel', backref="raw", lazy=True)
 
-    def __init__(self, user_id, data, project_id):
+    def __init__(self, user_id, data, project_id, mode):
         self.data = data
+        self.mode = mode
         self.user_id = user_id
         self.project_id = project_id
 
@@ -33,11 +34,11 @@ class RawModel(db.Model):
         return cls.query.first()
 
     @classmethod
-    def find_by_user_id(cls, _id):
+    def find_by_user_id(cls, _id) -> RawModel:
         return cls.query.filter_by(user_id=_id, project_id=0).first()
 
     @classmethod
-    def find_by_project_id(cls, project_id):
+    def find_by_project_id(cls, project_id) -> RawModel:
         return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):
@@ -53,13 +54,16 @@ class DetectResultModel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"))
 
+    mode = db.Column(db.Integer, default=0)  # 0: inplace, 1: server
+
     # user = db.relationship('UserModel')
     # project = db.relationship('ProjectModel', backref="raw", lazy=True)
 
-    def __init__(self, user_id, data, project_id):
+    def __init__(self, user_id, data, project_id, mode=0):
         self.data = data
         self.user_id = user_id
         self.project_id = project_id
+        self.mode = mode
 
     def json(self):
         return {'data': self.data}
@@ -78,7 +82,7 @@ class DetectResultModel(db.Model):
     #     return cls.query.filter_by(user_id=_id, project_id=0).first()
 
     @classmethod
-    def find_by_project_id(cls, project_id):
+    def find_by_project_id(cls, project_id) -> DetectResultModel:
         return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):
@@ -93,13 +97,16 @@ class SortResultModel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"))
 
+    mode = db.Column(db.Integer, default=0)  # 0: inplace, 1: server
+
     # user = db.relationship('UserModel')
     # project = db.relationship('ProjectModel', backref="raw", lazy=True)
 
-    def __init__(self, user_id, data, project_id):
+    def __init__(self, user_id, data, project_id, mode=0):
         self.data = data
         self.user_id = user_id
         self.project_id = project_id
+        self.mode = mode
 
     def json(self):
         return {'data': self.data}
@@ -118,7 +125,7 @@ class SortResultModel(db.Model):
     #     return cls.query.filter_by(user_id=_id, project_id=0).first()
 
     @classmethod
-    def find_by_project_id(cls, project_id):
+    def find_by_project_id(cls, project_id) -> SortResultModel:
         return cls.query.filter_by(project_id=project_id).first()
 
     def delete_from_db(self):

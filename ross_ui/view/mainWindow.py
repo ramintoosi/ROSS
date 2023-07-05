@@ -1,4 +1,3 @@
-from PyQt5 import QtCore
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 from PyQt5 import QtCore
@@ -12,7 +11,7 @@ from view.PCAManualWidget import PCAManualWidget
 
 icon_path = './view/icons/'
 
-__version__ = "1.0.0"
+__version__ = "2.0.0-alpha"
 
 
 # -----------------------------------------------------------------------------
@@ -72,11 +71,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.closeAct.setIcon(QtGui.QIcon(icon_path + "Close.png"))
         self.closeAct.setEnabled(False)
 
+        self.exportAct = QtWidgets.QAction(self.tr("&Export"), self)
+        self.exportAct.setStatusTip(self.tr("Export results"))
+        self.exportAct.setIcon(QtGui.QIcon(icon_path + "Export.png"))
+        self.exportAct.setEnabled(False)
+
         self.saveAct = QtWidgets.QAction(self.tr("&Save"), self)
+        self.saveAct.setEnabled(False)
         self.saveAct.setShortcut(QtGui.QKeySequence.Save)
         self.saveAct.setStatusTip(self.tr("Save"))
         self.saveAct.setIcon(QtGui.QIcon(icon_path + "Save.png"))
-        self.saveAct.setEnabled(False)
         self.saveAct.triggered.connect(self.onSave)
 
         self.saveAsAct = QtWidgets.QAction(self.tr("&Save As..."), self)
@@ -90,6 +94,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.importRawAct.setStatusTip(self.tr("Import Raw Data"))
         self.importRawAct.setIcon(QtGui.QIcon(icon_path + "Import.png"))
         self.importRawAct.triggered.connect(self.onImportRaw)
+
+        self.importRawActServer = QtWidgets.QAction(self.tr("&Raw Data From Server"), self)
+        self.importRawActServer.setStatusTip(self.tr("Import Raw Data From Server"))
+        self.importRawActServer.setIcon(QtGui.QIcon(icon_path + "Import.png"))
+        self.importRawActServer.triggered.connect(self.open_file_dialog_server)
 
         self.importDetectedAct = QtWidgets.QAction(self.tr("&Detection Result"), self)
         self.importDetectedAct.setStatusTip(self.tr("Import Detection Result"))
@@ -251,11 +260,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.plotAct.setStatusTip(self.tr("Plotting Clusters"))
         self.plotAct.triggered.connect(self.onVisPlot)
 
-        self.detect3dAct = QtWidgets.QAction(self.tr("&Detection Histogram 3D"))
+        # self.detect3dAct = QtWidgets.QAction(self.tr("&Detection Histogram 3D"))
         # self.detect3dAct.setCheckable(True)
         # self.detect3dAct.setChecked(False)
-        self.detect3dAct.setStatusTip(self.tr("Plotting 3D histogram of detection result"))
-        self.detect3dAct.triggered.connect(self.onDetect3D)
+        # self.detect3dAct.setStatusTip(self.tr("Plotting 3D histogram of detection result"))
+        # self.detect3dAct.triggered.connect(self.onDetect3D)
 
         self.clusterwaveAct = QtWidgets.QAction(self.tr("&Plotting Clusters Waveforms"))
         # self.clusterwaveAct.setCheckable(True)
@@ -336,15 +345,23 @@ class MainWindow(QtWidgets.QMainWindow):
         # Menu entry for file actions.
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"))
         # self.fileMenu.addAction(self.openAct)
-        self.fileMenu.addAction(self.closeAct)
-        self.fileMenu.addSeparator()
-        self.fileMenu.addAction(self.saveAct)
-        self.fileMenu.addAction(self.saveAsAct)
-        self.fileMenu.addSeparator()
+
+        # self.fileMenu.addSeparator()
+        # self.fileMenu.addAction(self.saveAct)
+        # self.fileMenu.addAction(self.saveAsAct)
+        # self.fileMenu.addSeparator()
         self.importMenu = self.fileMenu.addMenu(self.tr("&Import"))
-        self.importMenu.addActions((self.importRawAct, self.importDetectedAct, self.importSortedAct))
-        self.exportMenu = self.fileMenu.addMenu(self.tr("&Export"))
-        self.exportMenu.addActions((self.exportRawAct, self.exportDetectedAct, self.exportSortedAct))
+        self.importMenu.setEnabled(False)
+        self.importMenu.addActions(
+            (self.importRawAct, self.importRawActServer, self.importDetectedAct, self.importSortedAct))
+
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.exportAct)
+        self.fileMenu.addAction(self.closeAct)
+
+        # self.exportMenu = self.fileMenu.addMenu(self.tr("&Export"))
+        # self.exportMenu.setEnabled(False)
+        # self.exportMenu.addActions((self.exportRawAct, self.exportDetectedAct, self.exportSortedAct))
 
         # ------------------- tool from menu ------------------
         # Menu entry for tool acions
@@ -354,6 +371,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # run menu
         self.runMenu = self.menuBar().addMenu(self.tr("&Run"))
+        self.runMenu.setEnabled(False)
         self.runMenu.addAction(self.detectAct)
         self.runMenu.addAction(self.sortAct)
         # self.runMenu.addAction(self.batchAct)
@@ -373,7 +391,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Menu entry for visualization
         self.visMenu = self.menuBar().addMenu(self.tr("&Visualization"))
-        self.visMenu.addAction(self.detect3dAct)
+        self.visMenu.setEnabled(False)
+        # self.visMenu.addAction(self.detect3dAct)
         self.visMenu.addAction(self.clusterwaveAct)
         self.visMenu.addAction(self.livetimeAct)
         self.visMenu.addAction(self.isiAct)
@@ -425,7 +444,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.subwindow_detect3d.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
         self.subwindow_detect3d.setVisible(False)
 
-        self.subwindow_3d.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
+        # self.subwindow_3d.setGeometry(0, 0, int(self.w_mdi / 2), int(self.h_mdi * 2 / 3))
         self.subwindow_3d.setVisible(False)
 
         self.subwindow_pca_manual.setVisible(False)
@@ -474,20 +493,13 @@ class MainWindow(QtWidgets.QMainWindow):
         layout_detect3d.addWidget(self.plot_detect3d)
         self.widget_detect3d.setLayout(layout_detect3d)
 
-        # Plot Clusters Waveform
-        # self.widget_clusterwaveform =  pyqtgraph.widgets.MultiPlotWidget.MultiPlotWidget()
-
-        # Plot Live Time
-        # self.widget_livetime = QtWidgets.QWidget()
-
         # Plot ISI
         # self.widget_isi = QtWidgets.QWidget()
 
         # 3D Plot
         self.widget_3d = QtWidgets.QWidget()
-        self.plot_3d = gl.GLViewWidget()
-        self.plot_3d.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        layout_plot_3d = QtWidgets.QGridLayout()
+        self.widget_3d.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        layout_widget_3d = QtWidgets.QGridLayout()
         layout_plot_pca_manual = QtWidgets.QGridLayout()
 
         self.axis1ComboBox = QtWidgets.QComboBox()
@@ -521,23 +533,35 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.plotButton = QtWidgets.QPushButton(text='Plot')
 
-        axisWidget = QtWidgets.QWidget()
+        layout_widget_3d.addWidget(QtWidgets.QLabel("Axis 1"), 0, 0)
+        layout_widget_3d.addWidget(QtWidgets.QLabel("Axis 2"), 0, 1)
+        layout_widget_3d.addWidget(QtWidgets.QLabel("Axis 3"), 0, 2)
+
+        layout_widget_3d.addWidget(self.axis1ComboBox, 1, 0)
+        layout_widget_3d.addWidget(self.axis2ComboBox, 1, 1)
+        layout_widget_3d.addWidget(self.axis3ComboBox, 1, 2)
+        layout_widget_3d.addWidget(self.plotButton, 1, 3)
+        layout_widget_3d.addWidget(self.closeButton3d, 1, 4)
+
+        self.widget_3d.setLayout(layout_widget_3d)
+
+        # axisWidget = QtWidgets.QWidget()
         axisWidget_pca_manual = QtWidgets.QWidget()
 
-        axisLayout = QtWidgets.QHBoxLayout()
-        label = QtWidgets.QLabel('axis 1')
-        axisLayout.addWidget(label)
-        axisLayout.addWidget(self.axis1ComboBox)
-        label = QtWidgets.QLabel('axis 2')
-        axisLayout.addWidget(label)
-        axisLayout.addWidget(self.axis2ComboBox)
-        label = QtWidgets.QLabel('axis 3')
-        axisLayout.addWidget(label)
-        axisLayout.addWidget(self.axis3ComboBox)
-        axisLayout.addStretch(5)
-        axisLayout.addWidget(self.plotButton)
-        axisLayout.addWidget(self.closeButton3d)
-        axisWidget.setLayout(axisLayout)
+        # axisLayout = QtWidgets.QHBoxLayout()
+        # label = QtWidgets.QLabel('axis 1')
+        # axisLayout.addWidget(label)
+        # axisLayout.addWidget(self.axis1ComboBox)
+        # label = QtWidgets.QLabel('axis 2')
+        # axisLayout.addWidget(label)
+        # axisLayout.addWidget(self.axis2ComboBox)
+        # label = QtWidgets.QLabel('axis 3')
+        # axisLayout.addWidget(label)
+        # axisLayout.addWidget(self.axis3ComboBox)
+        # axisLayout.addStretch(5)
+        # axisLayout.addWidget(self.plotButton)
+        # axisLayout.addWidget(self.closeButton3d)
+        # axisWidget.setLayout(axisLayout)
 
         axisLayout_pca_button = QtWidgets.QHBoxLayout()
         axisLayout_pca_main = QtWidgets.QVBoxLayout()
@@ -556,10 +580,7 @@ class MainWindow(QtWidgets.QMainWindow):
         axisLayout_pca_main.addLayout(axisLayout_pca_button)
 
         axisWidget_pca_manual.setLayout(axisLayout_pca_main)
-
-        layout_plot_3d.addWidget(axisWidget)
-        layout_plot_3d.addWidget(self.plot_3d)
-        self.widget_3d.setLayout(layout_plot_3d)
+        # layout_plot_3d.addWidget(self.plot_3d)
 
         self.painter = QPainter()
         layout_plot_pca_manual.addWidget(axisWidget_pca_manual)
@@ -944,18 +965,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.mdiArea.addSubWindow(self.widget_waveform).setWindowTitle("Waveforms")
         self.mdiArea.addSubWindow(self.plot_histogram_pca).setWindowTitle("2D PCA Histogram")
-        # self.mdiArea.addSubWindow(self.widget_clusters).setWindowTitle("Clusters")
         self.mdiArea.addSubWindow(self.widget_raw).setWindowTitle("Raw Data")
         self.mdiArea.addSubWindow(self.widget_settings).setWindowTitle("Settings")
-        # self.mdiArea.addSubWindow(self.widget_visualizations).setWindowTitle("Visualizations")
         self.mdiArea.addSubWindow(self.widget_detect3d).setWindowTitle("DetectionResult 3D Hist")
-        # self.mdiArea.addSubWindow(self.widget_clusters).setWindowTitle("Waveforms")
-        # self.mdiArea.addSubWindow(self.widget_clusterwaveform).setWindowTitle("Plot Clusters Waveforms")
-        # self.mdiArea.addSubWindow(self.widget_livetime).setWindowTitle("Live Time")
-        # self.mdiArea.addSubWindow(self.widget_isi).setWindowTitle("ISI")
         self.mdiArea.addSubWindow(self.widget_3d).setWindowTitle("3D Plot")
         self.mdiArea.addSubWindow(self.widget_assign_manual).setWindowTitle("Assign to Nearest")
-
         self.mdiArea.addSubWindow(self.widget_pca_manual).setWindowTitle('PCA MANUAL')
         self.mdiArea.addSubWindow(self.plot_clusters_pca).setWindowTitle("2D PCA Clusters")
 
@@ -964,15 +978,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.subwindow_pca_histograms = subwindow_list[1]
         self.subwindow_raw = subwindow_list[2]
         self.subwindow_settings = subwindow_list[3]
-        # self.subwindow_visualization = subwindow_list[4]
         self.subwindow_detect3d = subwindow_list[4]
         self.subwindow_3d = subwindow_list[5]
+        self.subwindow_3d.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
         self.subwindow_assign = subwindow_list[6]
         self.subwindow_pca_manual = subwindow_list[7]
         self.subwindow_pca_clusters = subwindow_list[8]
-        # self.subwindow_clusterwave = subwindow_list[5]
-        # self.subwindow_livetime = subwindow_list[6]
-        # self.subwindow_isi = subwindow_list[7]
 
         for subwindow in subwindow_list:
             subwindow.setWindowFlags(
