@@ -20,5 +20,5 @@ class Browse(Resource):
         list_of_folders = [x for x in os.listdir(root) if
                            os.path.isdir(os.path.join(root, x)) and not x.startswith('.')]
         list_of_files = [x for x in os.listdir(root) if os.path.isfile(os.path.join(root, x)) and not x.startswith('.')
-                         and x.endswith(('.mat', '.csv', '.tdms'))]
+                         and x.endswith(('.mat', '.pkl'))]
         return {'folders': list_of_folders, 'files': list_of_files, 'root': root}

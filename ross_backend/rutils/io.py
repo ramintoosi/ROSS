@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from scipy.io import loadmat
+import numpy as np
 
 Raw_data_path = os.path.join(Path(__file__).parent, '../ross_data/Raw_Data')
 Path(Raw_data_path).mkdir(parents=True, exist_ok=True)
@@ -31,14 +32,31 @@ def read_file_in_server(request_data: dict):
 
             temp = file_raw[variable].flatten()
 
-            # ------------------ save raw data as pkl file in data_set folder -----------------------
-            address = os.path.join(Raw_data_path, str(uuid4()) + '.pkl')
+        elif file_extension == '.pkl':
+            with open(filename, 'rb') as f:
+                file_raw = pickle.load(f)
+            variables = list(file_raw.keys())
 
-            with open(address, 'wb') as f:
-                pickle.dump(temp, f)
-            # ----------------------------------------------------------------------------------------
-            return address, temp
+            if len(variables) > 1:
+                if 'varname' in request_data:
+                    variable = request_data['varname']
+                else:
+                    raise ValueError("More than one variable exists")
+            else:
+                variable = variables[0]
+
+            temp = np.array(file_raw[variable]).flatten()
+
         else:
-            raise TypeError("File not supported")
+            raise TypeError("Type not supported")
+
+        # ------------------ save raw data as pkl file in data_set folder -----------------------
+        address = os.path.join(Raw_data_path, str(uuid4()) + '.pkl')
+
+        with open(address, 'wb') as f:
+            pickle.dump(temp, f)
+        # ----------------------------------------------------------------------------------------
+        return address, temp
+
     else:
         raise ValueError("request data is incorrect")

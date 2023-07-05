@@ -157,7 +157,7 @@ class MainApp(MainWindow):
         filename, filetype = QtWidgets.QFileDialog.getOpenFileName(self,
                                                                    self.tr("Open file"),
                                                                    os.getcwd(),
-                                                                   self.tr("Raw Files(*.mat *.csv *.tdms)")
+                                                                   self.tr("Raw Files(*.mat *.pkl)")
                                                                    )
 
         if not filename:
@@ -184,53 +184,73 @@ class MainApp(MainWindow):
             else:
                 variable = variables[0]
 
+            # nd.array with shape (N,)
             temp = file_raw[variable].flatten()
 
-            self.raw = temp
+        elif file_extension == '.pkl':
+            with open(filename, 'rb') as f:
+                file_raw = pickle.load(f)
 
-            # ------------------ save raw data as pkl file in data_set folder ---------------------------------------
-            address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
-
-            with open(address, 'wb') as f:
-                pickle.dump(temp, f)
-
-            # -----------------------------------------------------------------------------------------------------
-
-        elif file_extension == '.csv':
-            df = pd.read_csv(filename, skiprows=1)
-            temp = df.to_numpy()
-            address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
-            self.raw = temp
-            with open(address, 'wb') as f:
-                pickle.dump(temp, f)
-        elif file_extension == '.tdms':
-            tdms_file = TdmsFile.read(filename)
-            i = 0
-            for group in tdms_file.groups():
-                df = tdms_file.object(group).as_dataframe()
-                variables = list(df.keys())
-                i = i + 1
+            variables = list(file_raw.keys())
 
             if len(variables) > 1:
                 variable = self.open_raw_dialog(variables)
                 if not variable:
-                    self.statusBar().showMessage('')
+                    self.statusBar().showMessage(self.tr("Nothing selected"))
                     return
             else:
                 variable = variables[0]
-            # group = tdms_file['group name']
-            # channel = group['channel name']
-            # channel_data = channel[:]
-            # channel_properties = channel.properties
-            temp = np.array(df[variable]).flatten()
-            self.raw = temp
 
-            address = os.path.join(self.Raw_data_path, os.path.split(filename)[-1][:-5] + '.pkl')
-            with open(address, 'wb') as f:
-                pickle.dump(temp, f)
+            # nd.array with shape (N,)
+            temp = np.array(file_raw[variable]).flatten()
+
+        # elif file_extension == '.csv':
+        #     df = pd.read_csv(filename, skiprows=1)
+        #     temp = df.to_numpy()
+        #     address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
+        #     self.raw = temp
+        #     with open(address, 'wb') as f:
+        #         pickle.dump(temp, f)
+        # elif file_extension == '.tdms':
+        #     tdms_file = TdmsFile.read(filename)
+        #     i = 0
+        #     for group in tdms_file.groups():
+        #         df = tdms_file.object(group).as_dataframe()
+        #         variables = list(df.keys())
+        #         i = i + 1
+        #
+        #     if len(variables) > 1:
+        #         variable = self.open_raw_dialog(variables)
+        #         if not variable:
+        #             self.statusBar().showMessage('')
+        #             return
+        #     else:
+        #         variable = variables[0]
+        #     # group = tdms_file['group name']
+        #     # channel = group['channel name']
+        #     # channel_data = channel[:]
+        #     # channel_properties = channel.properties
+        #     temp = np.array(df[variable]).flatten()
+        #     self.raw = temp
+        #
+        #     address = os.path.join(self.Raw_data_path, os.path.split(filename)[-1][:-5] + '.pkl')
+        #     with open(address, 'wb') as f:
+        #         pickle.dump(temp, f)
 
         else:
-            raise TypeError(f'File type {file_extension} is not supported!')
+            QtWidgets.QMessageBox.critical(self, 'Error', 'Type is not supported')
+            return
+
+        # check tmp
+        if temp.ndim != 1:
+            QtWidgets.QMessageBox.critical(self, 'Error', 'Variable must be a vector')
+            return
+
+        self.raw = temp
+        address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
+
+        with open(address, 'wb') as f:
+            pickle.dump(temp, f)
 
         self.refreshAct.setEnabled(True)
         self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
