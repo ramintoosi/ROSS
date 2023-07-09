@@ -3,8 +3,8 @@ import pickle
 from pathlib import Path
 from uuid import uuid4
 
-from scipy.io import loadmat
 import numpy as np
+from scipy.io import loadmat
 
 Raw_data_path = os.path.join(Path(__file__).parent, '../ross_data/Raw_Data')
 Path(Raw_data_path).mkdir(parents=True, exist_ok=True)

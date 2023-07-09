@@ -4,7 +4,8 @@
 
 ![ROSS Test](https://github.com/ramintoosi/ROSS/actions/workflows/ross-test.yml/badge.svg)
 
-ROSS v2 (alpha) is the Python version of offline spike sorting software implemented based on the methods described in the
+ROSS v2 (alpha) is the Python version of offline spike sorting software implemented based on the methods described in
+the
 paper
 entitled [An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions](https://www.nature.com/articles/s41598-021-93088-w). (
 Official Python Implementation)
@@ -12,7 +13,8 @@ Official Python Implementation)
 ### Important Note on ROSS v2
 
 ROSS v2 is implemented based on the client-server architecture. In the alpha version, the GUI and processing units are
-completely separated and their connection is based on Restful APIs. Now, you are able to run the light GUI on a simple machine while the data and algorithms would be executed on a
+completely separated and their connection is based on Restful APIs. Now, you are able to run the light GUI on a simple
+machine while the data and algorithms would be executed on a
 separate server in your lab. Please carefully read the docs and check our tutorial videos.
 
 ## Requirements
@@ -32,6 +34,7 @@ separate server in your lab. Please carefully read the docs and check our tutori
 2. Run the UI by typing  ```python ./ross_ui/main.py``` in the terminal.
 
 **Note:** If you have a separate server, run ```step 1``` in your server and ```step 2``` in your personal computer.
+
 3. The first time you want to use the software, you must define a user as follows:
 
 - In opened window, click on ```Options``` ---> ```Sign In/Up``` , enter the desired username and password, click
@@ -88,6 +91,7 @@ ROSS v2, same as v1, provides useful tools for spike detection, automatic and ma
   ![image](./images/vis2.png)
 
 # Citation
+
 If ROSS helps your research, please cite our paper in your publications.
 
 ```

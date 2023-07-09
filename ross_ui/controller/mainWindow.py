@@ -7,7 +7,6 @@ from uuid import uuid4
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import pyqtgraph
 import pyqtgraph.exporters
 import pyqtgraph.opengl as gl
@@ -16,7 +15,6 @@ import scipy.stats as stats
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtGui import QPixmap, QTransform, QColor, QIcon
 from colour import Color
-from nptdms import TdmsFile
 from shapely.geometry import Point, Polygon
 from sklearn.neighbors import NearestNeighbors
 
