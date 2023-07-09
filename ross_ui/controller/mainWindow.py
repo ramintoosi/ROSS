@@ -1211,12 +1211,11 @@ class MainApp(MainWindow):
     def assignManual(self):
         self.subwindow_assign.setVisible(True)
 
-        n_clusters = len(np.unique(self.clusters_tmp))
-
         try:
             self.listSourceWidget.clear()
             self.listTargetsWidget.clear()
-            for i in range(n_clusters):
+            cu = np.unique(self.clusters_tmp)
+            for i in range(len(cu[cu != -1])):
                 item1 = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
                 item2 = QtWidgets.QListWidgetItem("Cluster %i" % (i + 1))
                 self.listSourceWidget.addItem(item1)
