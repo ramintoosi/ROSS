@@ -31,6 +31,7 @@ separate server in your lab. Please carefully read the docs and check our tutori
 ## How to run
 
 1. Run the backend by typing  ```python ./ross_backend/app.py``` in the terminal.
+- **optional**: To use a different port use ```python ./ross_backend/app.py --port 5631```.
 2. Run the UI by typing  ```python ./ross_ui/main.py``` in the terminal.
 
 **Note:** If you have a separate server, run ```step 1``` in your server and ```step 2``` in your personal computer.
