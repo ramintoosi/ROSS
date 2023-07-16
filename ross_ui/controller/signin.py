@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets
+import requests
 
 from model.api import API
 from view.signin import Signin_Dialog
@@ -15,7 +16,11 @@ class SigninApp(Signin_Dialog):
         username = self.textEdit_username.text()
         password = self.textEdit_password.text()
         self.user = API(self.url)
-        res = self.user.sign_in(username, password)
+        try:
+            res = self.user.sign_in(username, password)
+        except requests.exceptions.ConnectionError as e:
+            QtWidgets.QMessageBox.critical(self, "Connection Error", str(e))
+            return None
         if res['stat']:
             super().accept()
         else:

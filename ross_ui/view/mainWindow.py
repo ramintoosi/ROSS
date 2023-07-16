@@ -284,7 +284,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.isiAct.setCheckable(True)
         # self.isiAct.setChecked(False)
         self.isiAct.setStatusTip(self.tr("Plotting Inter Spike Interval Histogram"))
-        self.isiAct.triggered.connect(self.onPlotIsi)
+        self.isiAct.triggered.connect(self.onPlotISI)
 
         self.plot3dAct = QtWidgets.QAction(self.tr("&3D Plot"))
         # self.plot3dAct.setCheckable(True)

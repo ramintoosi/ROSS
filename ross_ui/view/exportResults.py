@@ -30,12 +30,16 @@ class ExportResults(QtWidgets.QDialog):
         groupboxradio.setLayout(hboxradio)
 
         self.radioPickle = QtWidgets.QRadioButton("pickle")
-        self.radioMat = QtWidgets.QRadioButton("mat")
+        self.radioMat = QtWidgets.QRadioButton("MAT")
+        self.radioCSV = QtWidgets.QRadioButton("CSV")
+        self.radioJSON = QtWidgets.QRadioButton("JSON")
 
         self.radioPickle.setChecked(True)
 
         hboxradio.addWidget(self.radioPickle)
         hboxradio.addWidget(self.radioMat)
+        hboxradio.addWidget(self.radioCSV)
+        hboxradio.addWidget(self.radioJSON)
 
         hboxpush = QtWidgets.QHBoxLayout()
         self.pushExport = QtWidgets.QPushButton("Export")

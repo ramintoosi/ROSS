@@ -729,14 +729,18 @@ class MainApp(MainWindow):
 
     def onPlotLiveTime(self):
         try:
-            number_of_clusters = self.number_of_clusters
+            clus_un = np.unique(self.clusters_tmp)
+            number_of_clusters = len(clus_un)
             colors = self.colors
             spike_clustered_time = dict()
-            for i in range(number_of_clusters):
-                spike_clustered_time[i] = self.spike_time[self.clusters == i]
+            for i in clus_un:
+                if i == -1:
+                    number_of_clusters -= 1
+                    continue
+                spike_clustered_time[i] = self.spike_time[self.clusters_tmp == i]
 
             figure = MatPlotFigures('LiveTime', number_of_clusters, width=10, height=6, dpi=100)
-            for i, ax in enumerate(figure.axes):
+            for i, ax in zip(spike_clustered_time, figure.axes):
                 ax.hist(spike_clustered_time[i], bins=100, color=tuple(colors[i] / 255))
                 ax.set_title('Cluster {}'.format(i + 1))
             plt.tight_layout()
@@ -745,21 +749,25 @@ class MainApp(MainWindow):
         except:
             print(traceback.format_exc())
 
-    def onPlotIsi(self):
+    def onPlotISI(self):
         try:
-            number_of_clusters = self.number_of_clusters
+            clus_un = np.unique(self.clusters_tmp)
+            number_of_clusters = len(clus_un)
             colors = self.colors
             spike_clustered_time = dict()
             spike_clustered_delta = dict()
-            for i in range(number_of_clusters):
-                spike_clustered_time[i] = self.spike_time[self.clusters == i]
+            for i in clus_un:
+                if i == -1:
+                    number_of_clusters -= 1
+                    continue
+                spike_clustered_time[i] = self.spike_time[self.clusters_tmp == i]
                 tmp2 = spike_clustered_time[i][:len(spike_clustered_time[i]) - 1].copy()
                 tmp1 = spike_clustered_time[i][1:].copy()
                 spike_clustered_delta[i] = tmp1 - tmp2
 
             figure = MatPlotFigures('ISI', number_of_clusters, width=10, height=6, dpi=100)
 
-            for i, ax in enumerate(figure.axes):
+            for i, ax in zip(spike_clustered_delta, figure.axes):
                 gamma = stats.gamma
                 x = np.linspace(0, np.max(spike_clustered_delta[i]), 100)
                 param = gamma.fit(spike_clustered_delta[i], floc=0)
@@ -775,7 +783,7 @@ class MainApp(MainWindow):
             plt.show()
 
         except:
-            pass
+            print(traceback.format_exc())
 
     def onPlot3d(self):
         # self.subwindow_3d.setVisible(self.plot3dAct.isChecked())
