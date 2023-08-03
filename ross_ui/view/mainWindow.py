@@ -920,9 +920,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout_manual_sorting_out.addLayout(hlayout)
         self.manualSettingWidget.setLayout(self.layout_manual_sorting_out)
 
+        # Select channel
+        label_channel = QtWidgets.QLabel("Select Channel : ", self)
+        label_channel.setWordWrap(True)
+        self.combo_box_channel = QtWidgets.QComboBox()
+        self.combo_box_channel.addItems(["Channel 0"])
+        self.combo_box_channel.setEnabled(False)
+
+        self.channel_list_layout = QtWidgets.QVBoxLayout()
+        self.channel_list_layout.addWidget(label_channel)
+        self.channel_list_layout.addWidget(self.combo_box_channel)
+        self.channel_list_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
+        self.channelSettingWidget = QtWidgets.QWidget()
+        self.channelSettingWidget.setLayout(self.channel_list_layout)
+
         self.tabs_settings.addTab(self.detectSettingWidget, "Detection")
         self.tabs_settings.addTab(self.sortingSettingWidget, "Automatic Sorting")
         self.tabs_settings.addTab(self.manualSettingWidget, "Manual Sorting")
+        self.tabs_settings.addTab(self.channelSettingWidget, "Channels")
 
         layout_settings = QtWidgets.QHBoxLayout()
         layout_settings.addWidget(self.tabs_settings)
