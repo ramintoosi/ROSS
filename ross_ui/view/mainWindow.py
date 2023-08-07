@@ -925,7 +925,7 @@ class MainWindow(QtWidgets.QMainWindow):
         label_channel.setWordWrap(True)
         self.combo_box_channel = QtWidgets.QComboBox()
         self.combo_box_channel.addItems(["Channel 0"])
-        self.combo_box_channel.setEnabled(False)
+
 
         self.channel_list_layout = QtWidgets.QVBoxLayout()
         self.channel_list_layout.addWidget(label_channel)

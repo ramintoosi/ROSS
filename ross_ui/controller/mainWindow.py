@@ -30,6 +30,7 @@ from controller.serverAddress import ServerApp as server_form
 from controller.serverFileDialog import ServerFileDialogApp as sever_dialog
 from controller.signin import SigninApp as signin_form
 from view.mainWindow import MainWindow
+from controller.raw import Raw
 
 icon_path = './view/icons/'
 
@@ -59,6 +60,11 @@ class MainApp(MainWindow):
         self.url = 'http://localhost:5000'
 
         self.raw = None
+        self.combo_box_channel.clear()
+        self.combo_box_channel.addItem('Channel 0')
+        self.combo_box_channel.clear()
+        self.combo_box_channel.addItem('Channel 0')
+        self.channels = 1
         self.spike_mat = None
         self.spike_time = None
         self.cluster_time_vec = None
@@ -94,6 +100,7 @@ class MainApp(MainWindow):
         self.assign_close_button.pressed.connect(self.closeAssign)
         self.assign_button.pressed.connect(self.onAssignManualSorting)
         self.exportAct.triggered.connect(self.open_export_dialog)
+        self.combo_box_channel.currentIndexChanged.connect(self.plotRaw)
 
         # PCA MANUAL
         self.resetBottonPCAManual.clicked.connect(self.PCAManualResetButton)
@@ -103,6 +110,10 @@ class MainApp(MainWindow):
     def resetOnSignOutVars(self):
 
         self.raw = None
+        self.combo_box_channel.clear()
+        self.combo_box_channel.addItem('Channel 0')
+        self.combo_box_channel.clear()
+        self.combo_box_channel.addItem('Channel 0')
         self.spike_mat = None
         self.spike_time = None
         self.user_name = None
@@ -182,8 +193,7 @@ class MainApp(MainWindow):
             else:
                 variable = variables[0]
 
-            # nd.array with shape (N,)
-            temp = file_raw[variable].flatten()
+
 
         elif file_extension == '.pkl':
             with open(filename, 'rb') as f:
@@ -199,8 +209,9 @@ class MainApp(MainWindow):
             else:
                 variable = variables[0]
 
-            # nd.array with shape (N,)
-            temp = np.array(file_raw[variable]).flatten()
+
+
+
 
         # elif file_extension == '.csv':
         #     df = pd.read_csv(filename, skiprows=1)
@@ -239,16 +250,23 @@ class MainApp(MainWindow):
             QtWidgets.QMessageBox.critical(self, 'Error', 'Type is not supported')
             return
 
-        # check tmp
-        if temp.ndim != 1:
-            QtWidgets.QMessageBox.critical(self, 'Error', 'Variable must be a vector')
+        # nd.array with shape (N,)
+
+        temp = np.array(file_raw[variable])
+
+        if temp.ndim > 2:
+            QtWidgets.QMessageBox.critical(self, 'Error', 'Variable must be a vector or matrix')
             return
 
-        self.raw = temp
+        self.raw = Raw(temp)
+        self.combo_box_channel.clear()
+        self.combo_box_channel.addItems([f'Channel {i}' for i in range(self.raw.channels)])
+
+
         address = os.path.join(self.Raw_data_path, str(uuid4()) + '.pkl')
 
         with open(address, 'wb') as f:
-            pickle.dump(temp, f)
+            pickle.dump(self.raw, f)
 
         self.refreshAct.setEnabled(True)
         self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
@@ -575,7 +593,7 @@ class MainApp(MainWindow):
     def plotRaw(self):
         curve = HDF5Plot()
         curve.setAPI(self.user)
-        curve.setHDF5(self.raw)
+        curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()))
         self.widget_raw.clear()
         self.widget_raw.addItem(curve)
         self.widget_raw.setXRange(0, 10000)
@@ -585,7 +603,7 @@ class MainApp(MainWindow):
     def updatePlotRaw(self):
         curve = HDF5Plot()
         curve.setAPI(self.user)
-        curve.setHDF5(self.raw)
+        curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()))
         self.widget_raw.clear()
         self.widget_raw.showGrid(x=True, y=True)
         self.widget_raw.setMouseEnabled(y=False)
@@ -599,7 +617,7 @@ class MainApp(MainWindow):
                 pen = pyqtgraph.mkPen(color=color)
                 curve = HDF5Plot()
                 curve.setAPI(self.user)
-                curve.setHDF5(self.raw, pen)
+                curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()), pen)
                 curve.setCluster(self.cluster_time_vec == i_cluster)
                 self.widget_raw.addItem(curve)
         self.widget_raw.setXRange(0, 10000)
@@ -1394,6 +1412,9 @@ class MainApp(MainWindow):
                     new_data = pickle.load(f)
 
                 self.raw = new_data
+                self.combo_box_channel.clear()
+                self.combo_box_channel.addItems([f'Channel {i}' for i in range(self.raw.channels)])
+
                 self.statusBar().showMessage(self.tr("Plotting..."), 2500)
                 self.processEvents()
             flag_raw = True
@@ -1525,3 +1546,6 @@ class MainApp(MainWindow):
 
         self.alignment.setChecked(config_dict['alignment'])
         self.filtering.setChecked(config_dict['filtering'])
+
+    def change_channel(self):
+        self.updatePlotRaw()
