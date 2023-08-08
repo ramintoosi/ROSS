@@ -9,6 +9,7 @@ from flask_restful import Resource
 
 from models.data import RawModel, DetectResultModel, SortResultModel
 from rutils.io import read_file_in_server
+from rutils.raw import Raw
 
 SESSION = dict()
 
@@ -29,18 +30,22 @@ class RawDataDefault(Resource):
             else:
                 if request.json['start'] is None:
                     return {'message': 'SERVER MODE'}, 212
+                raw_data: Raw
                 if project_id in SESSION:
                     raw_data = SESSION[project_id]
                 else:
                     with open(raw.data, 'rb') as f:
                         raw_data = pickle.load(f)
+                    SESSION[project_id] = raw_data
+
                 start = request.json['start']
                 stop = request.json['stop']
+                channel = request.json['channel']
                 limit = request.json['limit']
-                stop = min(len(raw_data), stop)
+                stop = min(len(raw_data(channel)), stop)
 
                 ds = int((stop - start) / limit) + 1
-                visible = raw_data[start:stop:ds]
+                visible = raw_data(channel)[start:stop:ds]
 
                 buffer = io.BytesIO()
                 np.savez_compressed(buffer, visible=visible, stop=stop, ds=ds)

@@ -6,12 +6,13 @@ from uuid import uuid4
 import numpy as np
 from scipy.io import loadmat
 
+from rutils.raw import Raw
+
 Raw_data_path = os.path.join(Path(__file__).parent, '../ross_data/Raw_Data')
 Path(Raw_data_path).mkdir(parents=True, exist_ok=True)
 
 
 def read_file_in_server(request_data: dict):
-    print(request_data)
     if 'raw_data' in request_data and 'project_id' in request_data:
         filename = request_data['raw_data']
         file_extension = os.path.splitext(filename)[-1]
@@ -30,7 +31,7 @@ def read_file_in_server(request_data: dict):
             else:
                 variable = variables[0]
 
-            temp = file_raw[variable].flatten()
+            temp = file_raw[variable]
 
         elif file_extension == '.pkl':
             with open(filename, 'rb') as f:
@@ -45,10 +46,12 @@ def read_file_in_server(request_data: dict):
             else:
                 variable = variables[0]
 
-            temp = np.array(file_raw[variable]).flatten()
+            temp = np.array(file_raw[variable])
 
         else:
             raise TypeError("Type not supported")
+
+        temp = Raw(temp)
 
         # ------------------ save raw data as pkl file in data_set folder -----------------------
         address = os.path.join(Raw_data_path, str(uuid4()) + '.pkl')
