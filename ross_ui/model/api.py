@@ -79,13 +79,14 @@ class API():
             return {'stat': False, 'message': response.json()["message"]}
         return {'stat': False, 'message': 'Not Logged In!'}
 
-    def get_raw_data(self, start=None, stop=None, limit=None):
+    def get_raw_data(self, start=None, stop=None, limit=None, channel = None):
         if self.access_token is not None:
             response = requests.get(self.url + '/raw',
                                     headers={'Authorization': 'Bearer ' + self.access_token},
                                     json={'project_id': self.project_id,
                                           'start': start,
                                           'stop': stop,
+                                          'channel': channel,
                                           'limit': limit})
 
             if response.ok:
@@ -99,7 +100,8 @@ class API():
                     return {'stat': True,
                             'visible': raw_data['visible'].flatten(),
                             'stop': raw_data['stop'].flatten(),
-                            'ds': raw_data['ds'].flatten()}
+                            'ds': raw_data['ds'].flatten(),
+                            'n_channel': raw_data['n_channel']}
                 elif response.status_code == 212:
                     return {'stat': True, 'message': 'SERVER MODE'}
                 else:

@@ -48,7 +48,7 @@ class RawDataDefault(Resource):
                 visible = raw_data(channel)[start:stop:ds]
 
                 buffer = io.BytesIO()
-                np.savez_compressed(buffer, visible=visible, stop=stop, ds=ds)
+                np.savez_compressed(buffer, visible=visible, stop=stop, ds=ds, n_channel=raw_data.channels)
                 buffer.seek(0)
                 data = buffer.read()
                 buffer.close()

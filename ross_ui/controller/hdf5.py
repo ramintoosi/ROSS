@@ -14,6 +14,7 @@ class HDF5Plot(pg.PlotCurveItem):
         self.api = None
         self.hdf5 = None
         self.limit = 10000
+        self.channel = 0
         pg.PlotCurveItem.__init__(self, *args, **kwds)
 
     def setHDF5(self, data, pen=None):
@@ -25,6 +26,9 @@ class HDF5Plot(pg.PlotCurveItem):
 
     def setAPI(self, api: API):
         self.api = api
+
+    def setCHannel(self, channel):
+        self.channel = channel
 
     def viewRangeChanged(self):
         self.updateHDF5Plot()
@@ -47,7 +51,8 @@ class HDF5Plot(pg.PlotCurveItem):
         if self.hdf5 is None:
             stop = int(xrange[1] + 2)
             if (HDF5Plot.SS is None) or ([start, stop] != HDF5Plot.SS):
-                res = self.api.get_raw_data(start, stop, self.limit)
+                res = self.api.get_raw_data(start, stop, self.limit, self.channel)
+
                 HDF5Plot.SS = [start, stop]
                 HDF5Plot.res = res
             else:

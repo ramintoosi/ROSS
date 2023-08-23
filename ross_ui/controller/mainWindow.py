@@ -100,7 +100,7 @@ class MainApp(MainWindow):
         self.assign_close_button.pressed.connect(self.closeAssign)
         self.assign_button.pressed.connect(self.onAssignManualSorting)
         self.exportAct.triggered.connect(self.open_export_dialog)
-        self.combo_box_channel.currentIndexChanged.connect(self.plotRaw)
+        self.combo_box_channel.currentIndexChanged.connect(self.change_channel)
 
         # PCA MANUAL
         self.resetBottonPCAManual.clicked.connect(self.PCAManualResetButton)
@@ -403,6 +403,11 @@ class MainApp(MainWindow):
     def open_file_dialog_server(self):
         dialog = sever_dialog(self.user)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
+
+            res = self.user.get_raw_data(0, 100, self.limit, 0)
+            self.combo_box_channel.clear()
+            self.combo_box_channel.addItems([f'Channel {i}' for i in range(res['n_channel'])])
+
             self.refreshAct.setEnabled(True)
             self.statusBar().showMessage(self.tr("Successfully loaded file"), 2500)
             self.processEvents()
@@ -590,20 +595,24 @@ class MainApp(MainWindow):
         else:
             self.statusBar().showMessage(self.tr("Sorting got error"))
 
-    def plotRaw(self):
+    def plotRaw(self, force=False):
         curve = HDF5Plot()
         curve.setAPI(self.user)
-        curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()))
+        curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()) if self.raw is not None else None)
+        curve.setCHannel(self.combo_box_channel.currentIndex())
         self.widget_raw.clear()
         self.widget_raw.addItem(curve)
-        self.widget_raw.setXRange(0, 10000)
+        self.widget_raw.setXRange(0, 9999 + self.combo_box_channel.currentIndex())
         self.widget_raw.showGrid(x=True, y=True)
         self.widget_raw.setMouseEnabled(y=False)
+        if force:
+            curve.updateHDF5Plot()
 
     def updatePlotRaw(self):
         curve = HDF5Plot()
         curve.setAPI(self.user)
-        curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()))
+        curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()) if self.raw is not None else None)
+        curve.setCHannel(self.combo_box_channel.currentIndex())
         self.widget_raw.clear()
         self.widget_raw.showGrid(x=True, y=True)
         self.widget_raw.setMouseEnabled(y=False)
@@ -617,7 +626,8 @@ class MainApp(MainWindow):
                 pen = pyqtgraph.mkPen(color=color)
                 curve = HDF5Plot()
                 curve.setAPI(self.user)
-                curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()), pen)
+                curve.setHDF5(self.raw(channel=self.combo_box_channel.currentIndex()) if self.raw is not None else None, pen)
+                curve.setCHannel(self.combo_box_channel.currentIndex())
                 curve.setCluster(self.cluster_time_vec == i_cluster)
                 self.widget_raw.addItem(curve)
         self.widget_raw.setXRange(0, 10000)
@@ -1417,6 +1427,11 @@ class MainApp(MainWindow):
 
                 self.statusBar().showMessage(self.tr("Plotting..."), 2500)
                 self.processEvents()
+            else:
+                res = self.user.get_raw_data(0, 100, 100, 0)
+                self.combo_box_channel.clear()
+                self.combo_box_channel.addItems([f'Channel {i}' for i in range(res['n_channel'])])
+
             flag_raw = True
 
         res = self.user.get_detection_result()
@@ -1548,4 +1563,4 @@ class MainApp(MainWindow):
         self.filtering.setChecked(config_dict['filtering'])
 
     def change_channel(self):
-        self.updatePlotRaw()
+        self.plotRaw(force=True)
