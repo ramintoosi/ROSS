@@ -538,7 +538,7 @@ class MainApp(MainWindow):
         config_detect = self.read_config_detect()
         self.statusBar().showMessage(self.tr("Detection Started..."))
         self.processEvents()
-        res = self.user.start_detection(config_detect)
+        res = self.user.start_detection(config_detect, self.combo_box_channel.currentIndex())
 
         if res['stat']:
             self.statusBar().showMessage(self.tr("Detection Done."), 2500)

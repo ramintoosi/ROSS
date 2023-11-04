@@ -26,7 +26,8 @@ class DetectDefault(Resource):
     parser.add_argument('post_thr', type=int, required=True)
     parser.add_argument('dead_time', type=int, required=True)
     parser.add_argument('run_detection', type=bool, default=False)
-    parser.add_argument('project_id', type=int, default=False)
+    parser.add_argument('project_id', type=int, default=0)
+    parser.add_argument('channel', type=int, default=0)
 
     @jwt_required
     def get(self):
@@ -40,6 +41,8 @@ class DetectDefault(Resource):
     def post(self):
         data = DetectDefault.parser.parse_args()
         project_id = data['project_id']
+        channel = data['channel']
+
         user_id = get_jwt_identity()
         config = ConfigDetectionModel.find_by_project_id(project_id)
         if config:
@@ -83,7 +86,7 @@ class DetectDefault(Resource):
             with open(raw.data, 'rb') as f:
                 data = pickle.load(f)
 
-            spikeMat, spikeTime, pca_spikes, inds = startDetection(data, config)
+            spikeMat, spikeTime, pca_spikes, inds = startDetection(data(channel), config)
 
             data_file = {'spikeMat': spikeMat, 'spikeTime': spikeTime,
                          'config': config.json(), 'pca_spikes': pca_spikes,

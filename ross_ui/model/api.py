@@ -206,12 +206,13 @@ class API():
             return {'stat': False, 'message': response.json()["message"]}
         return {'stat': False, 'message': 'Not Logged In!'}
 
-    def start_detection(self, config):
+    def start_detection(self, config, channel):
         if self.access_token is not None:
 
             data = config
             data['run_detection'] = True
             data['project_id'] = self.project_id
+            data['channel'] = channel
 
             response = requests.post(self.url + '/detect',
                                      headers={'Authorization': 'Bearer ' + self.access_token},
@@ -222,8 +223,8 @@ class API():
             elif response.status_code == 401:
                 ret = self.refresh_jwt_token()
                 if ret:
-                    self.start_detection(config)
-            return {'stat': False, 'message': response.json()["message"]}
+                    self.start_detection(config, channel)
+            return {'stat': False, 'message': response.content}
         return {'stat': False, 'message': 'Not Logged In!'}
 
     def start_sorting(self, config):
