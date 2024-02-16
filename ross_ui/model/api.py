@@ -4,7 +4,7 @@ import numpy as np
 import requests
 
 
-class API():
+class API:
     def __init__(self, url):
         self.url = url
         self.refresh_token = None

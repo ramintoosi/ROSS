@@ -107,6 +107,11 @@ class MainApp(MainWindow):
         self.closeBottonPCAManual.clicked.connect(self.PCAManualCloseButton)
         self.doneBottonPCAManual.clicked.connect(self.PCAManualDoneButton)
 
+
+        if os.path.isfile('./.tmp/url'):
+            with open('./.tmp/url', 'r') as f:
+                self.url = f.read()
+
     def resetOnSignOutVars(self):
 
         self.raw = None
@@ -447,6 +452,8 @@ class MainApp(MainWindow):
         dialog = server_form(server_text=self.url)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             self.url = dialog.lineEdit.text()
+            with open('./.tmp/url', 'w') as f:
+                f.write(self.url)
 
     def open_raw_dialog(self, variables):
         dialog = raw_form(variables)
