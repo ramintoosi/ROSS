@@ -10,12 +10,20 @@ paper
 entitled [An automatic spike sorting algorithm based on adaptive spike detection and a mixture of skew-t distributions](https://www.nature.com/articles/s41598-021-93088-w). (
 Official Python Implementation)
 
+### Looking for the MATLAB version?
+[MATLAB version of ROSS](https://github.com/ramintoosi/ROSS/tree/master)
+
 ### Important Note on ROSS v2
 
 ROSS v2 is implemented based on the client-server architecture. In the alpha version, the GUI and processing units are
 completely separated and their connection is based on Restful APIs. Now, you are able to run the light GUI on a simple
 machine while the data and algorithms would be executed on a
 separate server in your lab. Please carefully read the docs and check our tutorial videos.
+
+## Features
+- Server-Client Architecture
+- Support for multiple users
+- Support for multiple channels spike sorting
 
 ## Requirements
 
